@@ -158,7 +158,7 @@
                                     </database>
                                     <name>ch.martinelli.oss.jooq.EqualsAndHashCodeJavaGenerator</name>
                                     <target>
-                                        <packageName>ch.martinelli.oss.registration.db</packageName>
+                                        <packageName>ch.martinelli.fun.kututipp.db</packageName>
                                     </target>
                                 </generator>
                             </jooq>
