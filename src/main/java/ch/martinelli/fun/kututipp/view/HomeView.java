@@ -9,7 +9,6 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import jakarta.annotation.security.PermitAll;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -21,6 +20,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 @Route("")
 @PageTitle("Home - Kutu-Tipp")
 public class HomeView extends VerticalLayout {
+
+    private static final String MAX_WIDTH = "600px";
 
     public HomeView() {
         setSizeFull();
@@ -50,7 +51,7 @@ public class HomeView extends VerticalLayout {
                 "You are logged in and ready to participate in the Swiss Cup gymnastics prediction game."
         );
 
-        var logoutButton = new Button("Logout", event -> {
+        var logoutButton = new Button("Logout", _ -> {
             SecurityContextHolder.clearContext();
             getUI().ifPresent(ui -> ui.getPage().setLocation("/login"));
         });
@@ -67,7 +68,7 @@ public class HomeView extends VerticalLayout {
         }
 
         content.add(logoutButton);
-        content.setMaxWidth("600px");
+        content.setMaxWidth(MAX_WIDTH);
         content.setAlignItems(Alignment.CENTER);
 
         add(content);
@@ -78,10 +79,10 @@ public class HomeView extends VerticalLayout {
 
         var description = new Paragraph(
                 "Kutu-Tipp is a prediction game for Swiss Cup gymnastics competitions. " +
-                "Predict scores for individual gymnasts and earn points based on your accuracy!"
+                        "Predict scores for individual gymnasts and earn points based on your accuracy!"
         );
         description.getStyle().set("text-align", "center");
-        description.setMaxWidth("600px");
+        description.setMaxWidth(MAX_WIDTH);
 
         var loginButton = new Button("Login", event ->
                 getUI().ifPresent(ui -> ui.navigate(LoginView.class))
@@ -99,7 +100,7 @@ public class HomeView extends VerticalLayout {
                 loginButton,
                 registerButton
         );
-        content.setMaxWidth("600px");
+        content.setMaxWidth(MAX_WIDTH);
         content.setAlignItems(Alignment.CENTER);
         content.setSpacing(true);
 
