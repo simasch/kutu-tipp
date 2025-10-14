@@ -72,21 +72,21 @@ SELECT setval('gymnast_id_seq', 12);
 INSERT INTO app_user (id, username, email, password_hash, role, created_at, updated_at)
 VALUES
     -- Admin users
-    (1, 'admin', 'admin@kututipp.ch', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'ADMIN',
+    (1, 'admin', 'admin@kututipp.ch', '$2a$12$KPFyReInvLLKfRpJQUV5Q.DeYWqVEYzYoH18c6R3syBoFlvAu369G', 'ADMIN',
      CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (2, 'judge', 'judge@kututipp.ch', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'ADMIN',
+    (2, 'judge', 'judge@kututipp.ch', '$2a$12$KPFyReInvLLKfRpJQUV5Q.DeYWqVEYzYoH18c6R3syBoFlvAu369G', 'ADMIN',
      CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 
     -- Regular users (tippers)
-    (3, 'tipper1', 'tipper1@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+    (3, 'tipper1', 'tipper1@example.com', '$2a$12$KPFyReInvLLKfRpJQUV5Q.DeYWqVEYzYoH18c6R3syBoFlvAu369G',
      'USER', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (4, 'tipper2', 'tipper2@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+    (4, 'tipper2', 'tipper2@example.com', '$2a$12$KPFyReInvLLKfRpJQUV5Q.DeYWqVEYzYoH18c6R3syBoFlvAu369G',
      'USER', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (5, 'tipper3', 'tipper3@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+    (5, 'tipper3', 'tipper3@example.com', '$2a$12$KPFyReInvLLKfRpJQUV5Q.DeYWqVEYzYoH18c6R3syBoFlvAu369G',
      'USER', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (6, 'fan_zurich', 'fan@zurich.ch', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'USER',
+    (6, 'fan_zurich', 'fan@zurich.ch', '$2a$12$KPFyReInvLLKfRpJQUV5Q.DeYWqVEYzYoH18c6R3syBoFlvAu369G', 'USER',
      CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (7, 'gym_expert', 'expert@gymnastics.ch', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+    (7, 'gym_expert', 'expert@gymnastics.ch', '$2a$12$KPFyReInvLLKfRpJQUV5Q.DeYWqVEYzYoH18c6R3syBoFlvAu369G',
      'USER', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 SELECT setval('app_user_id_seq', 7);
