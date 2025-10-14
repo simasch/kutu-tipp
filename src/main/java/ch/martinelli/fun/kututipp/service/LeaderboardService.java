@@ -4,6 +4,7 @@ import ch.martinelli.fun.kututipp.dto.LeaderboardEntry;
 import ch.martinelli.fun.kututipp.dto.LeaderboardFilter;
 import ch.martinelli.fun.kututipp.dto.RankTrend;
 import org.jooq.DSLContext;
+import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.SelectConditionStep;
 import org.slf4j.Logger;
@@ -270,18 +271,17 @@ public class LeaderboardService {
      * @param currentUsername Username of currently logged-in user (for highlighting)
      * @return Sorted list of leaderboard entries with ranks assigned
      */
-    private List<LeaderboardEntry> calculateRankings(Result<? extends org.jooq.Record> results, String currentUsername) {
+    private List<LeaderboardEntry> calculateRankings(Result<? extends Record> results, String currentUsername) {
         // Convert records to entries with initial data
         var entries = new ArrayList<LeaderboardEntry>();
 
-        for (org.jooq.Record record : results) {
-            var userId = record.get(APP_USER.ID);
-            var username = record.get(APP_USER.USERNAME);
-            var createdAt = record.get(APP_USER.CREATED_AT);
-            var totalPoints = record.get("total_points", Integer.class);
-            var totalPredictions = record.get("total_predictions", Integer.class);
-            var exactPredictions = record.get("exact_predictions", Integer.class);
-            var avgPoints = record.get("avg_points", Double.class);
+        for (var result : results) {
+            var userId = result.get(APP_USER.ID);
+            var username = result.get(APP_USER.USERNAME);
+            var totalPoints = result.get("total_points", Integer.class);
+            var totalPredictions = result.get("total_predictions", Integer.class);
+            var exactPredictions = result.get("exact_predictions", Integer.class);
+            var avgPoints = result.get("avg_points", Double.class);
 
             // Create entry without rank (will be assigned after sorting)
             var entry = new LeaderboardEntry(

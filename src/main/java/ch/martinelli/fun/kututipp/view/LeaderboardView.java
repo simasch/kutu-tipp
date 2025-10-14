@@ -39,7 +39,6 @@ import java.util.List;
 @PageTitle("Leaderboard - Kutu-Tipp")
 public class LeaderboardView extends VerticalLayout {
 
-    private static final String HIGHLIGHTED_ROW_CLASS = "highlighted-row";
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     private final LeaderboardService leaderboardService;
