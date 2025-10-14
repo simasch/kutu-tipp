@@ -1,0 +1,12 @@
+/* Leaderboard styling */
+
+/* Highlight current user's row in the leaderboard */
+.highlighted-row {
+    background-color: var(--lumo-primary-color-10pct);
+    font-weight: 500;
+}
+
+/* Ensure highlighted row maintains good contrast */
+.highlighted-row:hover {
+    background-color: var(--lumo-primary-color-20pct);
+}

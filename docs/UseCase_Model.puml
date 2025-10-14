@@ -35,7 +35,7 @@ rectangle "Kutu-Tipp System" {
   }
 
   package "Leaderboard & Statistics" {
-    usecase "UC-015\nView Leaderboard" as UC15
+    usecase "UC-015\nView Leaderboard" as UC15 #LightGreen
     usecase "UC-016\nView Competition Details" as UC16
     usecase "UC-017\nView History" as UC17
     usecase "UC-018\nView Statistics by Apparatus" as UC18

@@ -51,13 +51,18 @@ public class HomeView extends VerticalLayout {
                 "You are logged in and ready to participate in the Swiss Cup gymnastics prediction game."
         );
 
+        var leaderboardButton = new Button("View Leaderboard", event ->
+                getUI().ifPresent(ui -> ui.navigate(LeaderboardView.class))
+        );
+        leaderboardButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
+
         var logoutButton = new Button("Logout", _ -> {
             SecurityContextHolder.clearContext();
             getUI().ifPresent(ui -> ui.getPage().setLocation("/login"));
         });
         logoutButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-        var content = new VerticalLayout(title, description);
+        var content = new VerticalLayout(title, description, leaderboardButton);
 
         if (isAdmin) {
             var adminSection = new H2("Administrator Functions");
