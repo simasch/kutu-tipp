@@ -30,12 +30,12 @@ SELECT setval('apparatus_id_seq', 10);
 
 INSERT INTO competition (id, name, date, status, created_at, updated_at)
 VALUES
-    -- Finished competition (2024)
-    (1, 'Swiss Cup 2024 - Halbfinal', '2024-09-15 14:00:00+02', 'finished', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    -- Live competition (current)
-    (2, 'Swiss Cup 2024 - Final', '2024-11-23 15:00:00+01', 'live', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    -- Upcoming competition (future)
-    (3, 'Swiss Cup 2025 - Halbfinal', '2025-09-20 14:00:00+02', 'upcoming', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+    -- Finished competition (30 days ago)
+    (1, 'Swiss Cup 2024 - Halbfinal', CURRENT_TIMESTAMP - INTERVAL '30 days', 'finished', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    -- Live competition (started 1 hour ago)
+    (2, 'Swiss Cup 2024 - Final', CURRENT_TIMESTAMP - INTERVAL '1 hour', 'live', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    -- Upcoming competition (in 2 days)
+    (3, 'Swiss Cup 2025 - Halbfinal', CURRENT_TIMESTAMP + INTERVAL '2 days', 'upcoming', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 SELECT setval('competition_id_seq', 3);
 

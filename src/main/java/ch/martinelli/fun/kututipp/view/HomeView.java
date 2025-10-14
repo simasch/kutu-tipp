@@ -1,5 +1,6 @@
 package ch.martinelli.fun.kututipp.view;
 
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.H1;
@@ -51,18 +52,25 @@ public class HomeView extends VerticalLayout {
                 "You are logged in and ready to participate in the Swiss Cup gymnastics prediction game."
         );
 
-        var leaderboardButton = new Button("View Leaderboard", event ->
-                getUI().ifPresent(ui -> ui.navigate(LeaderboardView.class))
-        );
+        var predictionsButton = new Button("Make Predictions", _ ->
+                UI.getCurrent().navigate(PredictionView.class));
+        predictionsButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        var myPredictionsButton = new Button("My Predictions", _ ->
+                UI.getCurrent().navigate(MyPredictionsView.class));
+        myPredictionsButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        var leaderboardButton = new Button("View Leaderboard", _ ->
+                UI.getCurrent().navigate(LeaderboardView.class));
         leaderboardButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
 
         var logoutButton = new Button("Logout", _ -> {
             SecurityContextHolder.clearContext();
-            getUI().ifPresent(ui -> ui.getPage().setLocation("/login"));
+            UI.getCurrent().getPage().setLocation("/login");
         });
         logoutButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-        var content = new VerticalLayout(title, description, leaderboardButton);
+        var content = new VerticalLayout(title, description, predictionsButton, myPredictionsButton, leaderboardButton);
 
         if (isAdmin) {
             var adminSection = new H2("Administrator Functions");
@@ -90,13 +98,11 @@ public class HomeView extends VerticalLayout {
         description.setMaxWidth(MAX_WIDTH);
 
         var loginButton = new Button("Login", event ->
-                getUI().ifPresent(ui -> ui.navigate(LoginView.class))
-        );
+                UI.getCurrent().navigate(LoginView.class));
         loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-        var registerButton = new Button("Register", event ->
-                getUI().ifPresent(ui -> ui.navigate(RegistrationView.class))
-        );
+        var registerButton = new Button("Register", _ ->
+                UI.getCurrent().navigate(RegistrationView.class));
         registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
 
         var content = new VerticalLayout(
