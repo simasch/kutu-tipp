@@ -9,8 +9,8 @@ actor "Administrator" as Admin
 rectangle "Kutu-Tipp System" {
 
   package "Authentication" {
-    usecase "UC-001\nRegister Account" as UC1
-    usecase "UC-002\nLogin" as UC2
+    usecase "UC-001\nRegister Account" as UC1 #LightGreen
+    usecase "UC-002\nLogin" as UC2 #LightGreen
   }
 
   package "Competition Management" {
@@ -31,7 +31,7 @@ rectangle "Kutu-Tipp System" {
     usecase "UC-011\nEnter Actual Scores" as UC11
     usecase "UC-012\nImport Results (CSV/Excel)" as UC12
     usecase "UC-013\nView Live Results" as UC13
-    usecase "UC-014\nCalculate Points" as UC14
+    usecase "UC-014\nCalculate Points" as UC14 #LightGreen
   }
 
   package "Leaderboard & Statistics" {
@@ -98,6 +98,12 @@ note right of UC4
   - upcoming
   - live
   - finished
+end note
+
+note bottom of UC1
+  Legend:
+  - #LightGreen Implemented
+  - White Not yet implemented
 end note
 
 @enduml
