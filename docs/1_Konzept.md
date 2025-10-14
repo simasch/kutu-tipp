@@ -56,7 +56,8 @@ User (
   id,
   username,
   email,
-  password_hash
+  password_hash,
+  role (USER/ADMIN)
 )
 
 -- Tipps

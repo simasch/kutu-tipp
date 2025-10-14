@@ -91,12 +91,17 @@ Based on the domain concept (docs/1_Konzept.md), the system should have these ma
 
 **Core Tables**:
 
-- `Competition` - Competitions (Halbfinal, Final) with status (upcoming/live/finished)
-- `Gymnast` - Gymnasts with name, team, gender
-- `Apparatus` - Equipment (Reck, Boden, etc.) by gender
-- `CompetitionEntry` - Links gymnasts to apparatus for specific competitions, stores actual scores
-- `User` - Application users (tippers)
-- `Prediction` - User predictions with points earned
+- `competition` - Competitions (Halbfinal, Final) with status (upcoming/live/finished)
+- `gymnast` - Gymnasts with name, team, gender
+- `apparatus` - Equipment (Reck, Boden, etc.) by gender
+- `competition_entry` - Links gymnasts to apparatus for specific competitions, stores actual scores
+- `app_user` - Application users (tippers) with role (USER/ADMIN) for authentication and authorization
+- `prediction` - User predictions with points earned
+
+**ENUMs**:
+- `competition_status` - ENUM('upcoming', 'live', 'finished')
+- `gender_type` - ENUM('M', 'F')
+- `user_role` - ENUM('USER', 'ADMIN')
 
 **Flyway Migrations**: Create migration files in `src/main/resources/db/migration` with naming pattern
 `V{version}__{description}.sql`
@@ -107,12 +112,18 @@ This project uses **Vaadin Flow** (Java-based views), not Hilla (React-based).
 
 **Key Views to Implement**:
 
-- Registration/Login view
-- Competition overview (list of upcoming/live/finished competitions)
-- Prediction entry view (grid for gymnast/apparatus combinations)
-- Live results view
-- Leaderboard view
-- Admin view for data management
+- Registration/Login view (public access)
+- Competition overview (authenticated users)
+- Prediction entry view (authenticated users) - grid for gymnast/apparatus combinations
+- Live results view (authenticated users)
+- Leaderboard view (authenticated users)
+- Admin view for data management (ADMIN role only)
+
+**Authentication & Authorization**:
+- Users have a `role` field (USER or ADMIN)
+- Regular users (USER) can make predictions and view results
+- Admin users (ADMIN) can manage competitions, gymnasts, apparatus, and enter actual scores
+- Use Vaadin's built-in security with role-based access control
 
 **Vaadin Components**: Use standard Vaadin Flow components (Grid, TextField, Button, VerticalLayout, etc.)
 
