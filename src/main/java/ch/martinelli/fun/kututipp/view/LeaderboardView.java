@@ -226,14 +226,6 @@ public class LeaderboardView extends VerticalLayout {
             return icon;
         })).setHeader("Trend").setWidth("80px").setFlexGrow(0);
 
-        // Highlight current user's row
-        leaderboardGrid.setClassNameGenerator(entry -> {
-            if (entry.isCurrentUser()) {
-                return HIGHLIGHTED_ROW_CLASS;
-            }
-            return null;
-        });
-
         return leaderboardGrid;
     }
 
