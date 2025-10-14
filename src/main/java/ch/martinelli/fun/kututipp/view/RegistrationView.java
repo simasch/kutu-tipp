@@ -30,9 +30,9 @@ import org.slf4j.LoggerFactory;
  * Registration view for new user account creation.
  * Implements UC-001: Register Account.
  */
+@AnonymousAllowed
 @Route("register")
 @PageTitle("Register - Kutu-Tipp")
-@AnonymousAllowed
 public class RegistrationView extends VerticalLayout {
 
     private static final Logger log = LoggerFactory.getLogger(RegistrationView.class);
@@ -54,7 +54,7 @@ public class RegistrationView extends VerticalLayout {
         setJustifyContentMode(JustifyContentMode.CENTER);
 
         // Create form
-        H1 title = new H1("Create Your Account");
+        var title = new H1("Create Your Account");
         title.getStyle().set("margin-bottom", "0");
 
         usernameField = new TextField("Username");
@@ -90,7 +90,7 @@ public class RegistrationView extends VerticalLayout {
                 .bind(RegistrationForm::getPasswordConfirmation, RegistrationForm::setPasswordConfirmation);
 
         // Form layout
-        FormLayout formLayout = new FormLayout();
+        var formLayout = new FormLayout();
         formLayout.add(usernameField, emailField, passwordField, passwordConfirmationField);
         formLayout.setResponsiveSteps(
                 new FormLayout.ResponsiveStep("0", 1)
@@ -98,23 +98,23 @@ public class RegistrationView extends VerticalLayout {
         formLayout.setMaxWidth("400px");
 
         // Buttons
-        Button registerButton = new Button("Register", event -> handleRegistration());
+        var registerButton = new Button("Register", event -> handleRegistration());
         registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-        Button cancelButton = new Button("Cancel", event -> navigateToLogin());
+        var cancelButton = new Button("Cancel", event -> navigateToLogin());
         cancelButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 
-        HorizontalLayout buttonLayout = new HorizontalLayout(registerButton, cancelButton);
+        var buttonLayout = new HorizontalLayout(registerButton, cancelButton);
         buttonLayout.setMaxWidth("400px");
         buttonLayout.setWidthFull();
 
         // Login link
-        RouterLink loginLink = new RouterLink("Already have an account? Login", LoginView.class);
-        Span loginLinkContainer = new Span(loginLink);
+        var loginLink = new RouterLink("Already have an account? Login", LoginView.class);
+        var loginLinkContainer = new Span(loginLink);
         loginLinkContainer.getStyle().set("margin-top", "1rem");
 
         // Add all components
-        VerticalLayout formContainer = new VerticalLayout(
+        var formContainer = new VerticalLayout(
                 title,
                 formLayout,
                 buttonLayout,
@@ -129,7 +129,7 @@ public class RegistrationView extends VerticalLayout {
 
     private void handleRegistration() {
         try {
-            RegistrationForm form = new RegistrationForm();
+            var form = new RegistrationForm();
             binder.writeBean(form);
 
             // Call service to register user
@@ -141,7 +141,7 @@ public class RegistrationView extends VerticalLayout {
             );
 
             // Show success notification
-            Notification notification = Notification.show(
+            var notification = Notification.show(
                     "Registration successful! Please login with your credentials.",
                     5000,
                     Notification.Position.TOP_CENTER

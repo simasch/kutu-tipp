@@ -14,9 +14,9 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
  * Login view for user authentication.
  * Implements UC-002: Login (placeholder for now).
  */
+@AnonymousAllowed
 @Route("login")
 @PageTitle("Login - Kutu-Tipp")
-@AnonymousAllowed
 public class LoginView extends VerticalLayout implements BeforeEnterObserver {
 
     private final LoginForm loginForm;
@@ -26,13 +26,13 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
         setAlignItems(Alignment.CENTER);
         setJustifyContentMode(JustifyContentMode.CENTER);
 
-        H1 title = new H1("Kutu-Tipp Login");
+        var title = new H1("Kutu-Tipp Login");
 
         loginForm = new LoginForm();
         loginForm.setAction("login");
         loginForm.setForgotPasswordButtonVisible(false);
 
-        RouterLink registerLink = new RouterLink("Don't have an account? Register here", RegistrationView.class);
+        var registerLink = new RouterLink("Don't have an account? Register here", RegistrationView.class);
 
         add(title, loginForm, registerLink);
     }

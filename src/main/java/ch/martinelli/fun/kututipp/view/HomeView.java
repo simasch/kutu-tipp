@@ -17,9 +17,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * Home/landing page for the Kutu-Tipp application.
  * Shows different content based on authentication status and user role.
  */
+@AnonymousAllowed
 @Route("")
 @PageTitle("Home - Kutu-Tipp")
-@AnonymousAllowed
 public class HomeView extends VerticalLayout {
 
     public HomeView() {
@@ -27,7 +27,7 @@ public class HomeView extends VerticalLayout {
         setAlignItems(Alignment.CENTER);
         setJustifyContentMode(JustifyContentMode.CENTER);
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication != null && authentication.isAuthenticated()
                 && !"anonymousUser".equals(authentication.getPrincipal())) {
@@ -40,27 +40,27 @@ public class HomeView extends VerticalLayout {
     }
 
     private void showAuthenticatedView(Authentication authentication) {
-        String username = authentication.getName();
-        boolean isAdmin = authentication.getAuthorities().stream()
+        var username = authentication.getName();
+        var isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
 
-        H1 title = new H1("Welcome to Kutu-Tipp, " + username + "!");
+        var title = new H1("Welcome to Kutu-Tipp, " + username + "!");
 
-        Paragraph description = new Paragraph(
+        var description = new Paragraph(
                 "You are logged in and ready to participate in the Swiss Cup gymnastics prediction game."
         );
 
-        Button logoutButton = new Button("Logout", event -> {
+        var logoutButton = new Button("Logout", event -> {
             SecurityContextHolder.clearContext();
             getUI().ifPresent(ui -> ui.getPage().setLocation("/login"));
         });
         logoutButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-        VerticalLayout content = new VerticalLayout(title, description);
+        var content = new VerticalLayout(title, description);
 
         if (isAdmin) {
-            H2 adminSection = new H2("Administrator Functions");
-            Paragraph adminInfo = new Paragraph(
+            var adminSection = new H2("Administrator Functions");
+            var adminInfo = new Paragraph(
                     "As an administrator, you have access to manage competitions, gymnasts, and apparatus."
             );
             content.add(adminSection, adminInfo);
@@ -74,26 +74,26 @@ public class HomeView extends VerticalLayout {
     }
 
     private void showAnonymousView() {
-        H1 title = new H1("Welcome to Kutu-Tipp!");
+        var title = new H1("Welcome to Kutu-Tipp!");
 
-        Paragraph description = new Paragraph(
+        var description = new Paragraph(
                 "Kutu-Tipp is a prediction game for Swiss Cup gymnastics competitions. " +
                 "Predict scores for individual gymnasts and earn points based on your accuracy!"
         );
         description.getStyle().set("text-align", "center");
         description.setMaxWidth("600px");
 
-        Button loginButton = new Button("Login", event ->
+        var loginButton = new Button("Login", event ->
                 getUI().ifPresent(ui -> ui.navigate(LoginView.class))
         );
         loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-        Button registerButton = new Button("Register", event ->
+        var registerButton = new Button("Register", event ->
                 getUI().ifPresent(ui -> ui.navigate(RegistrationView.class))
         );
         registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
 
-        VerticalLayout content = new VerticalLayout(
+        var content = new VerticalLayout(
                 title,
                 description,
                 loginButton,

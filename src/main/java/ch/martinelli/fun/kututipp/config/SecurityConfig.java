@@ -1,21 +1,25 @@
 package ch.martinelli.fun.kututipp.config;
 
+import ch.martinelli.fun.kututipp.view.LoginView;
+import com.vaadin.flow.spring.security.VaadinAwareSecurityContextHolderStrategyConfiguration;
+import com.vaadin.flow.spring.security.VaadinSecurityConfigurer;
 import com.vaadin.flow.spring.security.VaadinWebSecurity;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
 
 /**
  * Security configuration for the application.
- * <p>
- * Configures BCrypt password encoder with cost factor 10 as per BR-003.
  */
-@EnableWebSecurity
 @Configuration
-public class SecurityConfig extends VaadinWebSecurity {
+@EnableWebSecurity
+@Import(VaadinAwareSecurityContextHolderStrategyConfiguration.class)
+public class SecurityConfig {
 
     /**
      * Configures BCrypt password encoder.
@@ -28,16 +32,8 @@ public class SecurityConfig extends VaadinWebSecurity {
         return new BCryptPasswordEncoder();
     }
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        // Allow public access to registration page and home page
-        http.authorizeHttpRequests(auth ->
-                auth.requestMatchers("/register", "/").permitAll()
-        );
-
-        super.configure(http);
-
-        // Configure login view - redirects to home page after successful login
-        setLoginView(http, "/login", "/");
+    @Bean
+    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http.with(VaadinSecurityConfigurer.vaadin(), configurer -> configurer.loginView(LoginView.class)).build();
     }
 }

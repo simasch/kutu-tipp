@@ -85,6 +85,11 @@ equals/hashCode methods to generated records.
         - `repositories` - jOOQ repository classes
         - `domain` - Domain models if needed
 
+### Code Style
+
+- Use var whenever possible
+- Always use AssertJ
+
 ### Database Schema Design
 
 Based on the domain concept (docs/1_Konzept.md), the system should have these main entities:
