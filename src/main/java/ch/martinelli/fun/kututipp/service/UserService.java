@@ -13,8 +13,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 /**
  * Service for user-related operations.
  */
@@ -54,7 +52,7 @@ public class UserService {
         }
 
         // Hash the password
-        String passwordHash = passwordEncoder.encode(password);
+        var passwordHash = passwordEncoder.encode(password);
 
         // Create the user with USER role
         return userRepository.create(username, email, passwordHash, UserRole.USER);
@@ -71,19 +69,19 @@ public class UserService {
      */
     private void validateRegistrationInput(String username, String email, String password, String passwordConfirmation) {
         // Validate username
-        List<String> usernameErrors = UsernameValidator.validate(username);
+        var usernameErrors = UsernameValidator.validate(username);
         if (!usernameErrors.isEmpty()) {
             throw new RegistrationException(String.join(", ", usernameErrors));
         }
 
         // Validate email
-        List<String> emailErrors = EmailValidator.validate(email);
+        var emailErrors = EmailValidator.validate(email);
         if (!emailErrors.isEmpty()) {
             throw new RegistrationException(String.join(", ", emailErrors));
         }
 
         // Validate password
-        List<String> passwordErrors = PasswordValidator.validate(password);
+        var passwordErrors = PasswordValidator.validate(password);
         if (!passwordErrors.isEmpty()) {
             throw new RegistrationException(String.join(", ", passwordErrors));
         }

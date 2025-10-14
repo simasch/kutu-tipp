@@ -64,7 +64,7 @@ public class LeaderboardService {
         var exactPredictionsField = count(when(PREDICTION.POINTS_EARNED.eq(3), 1)).as("exact_predictions");
         var avgPointsField = coalesce(avg(PREDICTION.POINTS_EARNED), 0.0).as("avg_points");
 
-        // Query with left join to include users without predictions
+        // Query with inner join to exclude users without predictions
         var results = dsl.select(
                         APP_USER.ID,
                         APP_USER.USERNAME,
@@ -75,7 +75,7 @@ public class LeaderboardService {
                         avgPointsField
                 )
                 .from(APP_USER)
-                .leftJoin(PREDICTION).on(APP_USER.ID.eq(PREDICTION.USER_ID))
+                .join(PREDICTION).on(APP_USER.ID.eq(PREDICTION.USER_ID))
                 .leftJoin(COMPETITION_ENTRY).on(PREDICTION.COMPETITION_ENTRY_ID.eq(COMPETITION_ENTRY.ID))
                 .leftJoin(COMPETITION).on(COMPETITION_ENTRY.COMPETITION_ID.eq(COMPETITION.ID))
                 .groupBy(APP_USER.ID, APP_USER.USERNAME, APP_USER.CREATED_AT)
@@ -110,9 +110,9 @@ public class LeaderboardService {
                         avgPointsField
                 )
                 .from(APP_USER)
-                .leftJoin(PREDICTION).on(APP_USER.ID.eq(PREDICTION.USER_ID))
-                .leftJoin(COMPETITION_ENTRY).on(PREDICTION.COMPETITION_ENTRY_ID.eq(COMPETITION_ENTRY.ID))
-                .leftJoin(COMPETITION).on(COMPETITION_ENTRY.COMPETITION_ID.eq(COMPETITION.ID))
+                .join(PREDICTION).on(APP_USER.ID.eq(PREDICTION.USER_ID))
+                .join(COMPETITION_ENTRY).on(PREDICTION.COMPETITION_ENTRY_ID.eq(COMPETITION_ENTRY.ID))
+                .join(COMPETITION).on(COMPETITION_ENTRY.COMPETITION_ID.eq(COMPETITION.ID))
                 .where(COMPETITION.ID.eq(competitionId))
                 .groupBy(APP_USER.ID, APP_USER.USERNAME, APP_USER.CREATED_AT)
                 .fetch();
@@ -146,10 +146,10 @@ public class LeaderboardService {
                         avgPointsField
                 )
                 .from(APP_USER)
-                .leftJoin(PREDICTION).on(APP_USER.ID.eq(PREDICTION.USER_ID))
-                .leftJoin(COMPETITION_ENTRY).on(PREDICTION.COMPETITION_ENTRY_ID.eq(COMPETITION_ENTRY.ID))
-                .leftJoin(COMPETITION).on(COMPETITION_ENTRY.COMPETITION_ID.eq(COMPETITION.ID))
-                .leftJoin(APPARATUS).on(COMPETITION_ENTRY.APPARATUS_ID.eq(APPARATUS.ID))
+                .join(PREDICTION).on(APP_USER.ID.eq(PREDICTION.USER_ID))
+                .join(COMPETITION_ENTRY).on(PREDICTION.COMPETITION_ENTRY_ID.eq(COMPETITION_ENTRY.ID))
+                .join(COMPETITION).on(COMPETITION_ENTRY.COMPETITION_ID.eq(COMPETITION.ID))
+                .join(APPARATUS).on(COMPETITION_ENTRY.APPARATUS_ID.eq(APPARATUS.ID))
                 .where(APPARATUS.ID.eq(apparatusId))
                 .groupBy(APP_USER.ID, APP_USER.USERNAME, APP_USER.CREATED_AT)
                 .fetch();
@@ -183,13 +183,12 @@ public class LeaderboardService {
                         avgPointsField
                 )
                 .from(APP_USER)
-                .leftJoin(PREDICTION).on(APP_USER.ID.eq(PREDICTION.USER_ID))
-                .leftJoin(COMPETITION_ENTRY).on(PREDICTION.COMPETITION_ENTRY_ID.eq(COMPETITION_ENTRY.ID))
-                .leftJoin(COMPETITION).on(COMPETITION_ENTRY.COMPETITION_ID.eq(COMPETITION.ID))
+                .join(PREDICTION).on(APP_USER.ID.eq(PREDICTION.USER_ID))
+                .join(COMPETITION_ENTRY).on(PREDICTION.COMPETITION_ENTRY_ID.eq(COMPETITION_ENTRY.ID))
+                .join(COMPETITION).on(COMPETITION_ENTRY.COMPETITION_ID.eq(COMPETITION.ID))
                 .leftJoin(GYMNAST).on(COMPETITION_ENTRY.GYMNAST_ID.eq(GYMNAST.ID))
                 .leftJoin(APPARATUS).on(COMPETITION_ENTRY.APPARATUS_ID.eq(APPARATUS.ID))
-                .where(PREDICTION.ID.isNull()
-                        .or(field("prediction.created_at < (competition.date - interval '30 minutes')").isTrue()));
+                .where(field("prediction.created_at < (competition.date - interval '30 minutes')").isTrue());
 
         // Apply filters
         var filteredQuery = applyFilters(queryBuilder, filter);

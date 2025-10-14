@@ -1,6 +1,5 @@
 package ch.martinelli.fun.kututipp.security;
 
-import ch.martinelli.fun.kututipp.db.tables.records.AppUserRecord;
 import ch.martinelli.fun.kututipp.repository.UserRepository;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -35,10 +34,10 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         // Trim whitespace as per BR-001
-        String trimmedUsername = username.trim();
+        var trimmedUsername = username.trim();
 
         // Find user in database (case-insensitive)
-        AppUserRecord userRecord = userRepository.findByUsername(trimmedUsername)
+        var userRecord = userRepository.findByUsername(trimmedUsername)
                 .orElseThrow(() -> new UsernameNotFoundException(
                         "User not found with username: " + trimmedUsername));
 

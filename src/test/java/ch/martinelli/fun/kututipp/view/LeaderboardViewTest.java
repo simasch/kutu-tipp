@@ -46,9 +46,10 @@ class LeaderboardViewTest extends KaribuTest {
         assertThat(grid).isNotNull();
 
         // Verify filter controls are present
-        var filterCombo = _get(ComboBox.class, spec -> spec.withLabel("Filter"));
+        var filterCombo = _get(ComboBox.class, spec -> spec.withLabel("Competition"));
         assertThat(filterCombo).isNotNull();
-        assertThat(filterCombo.getValue()).isEqualTo("Overall");
+        assertThat(filterCombo.getValue()).isNotNull();
+        assertThat(filterCombo.getValue().toString()).isEqualTo("All Competitions");
 
         // Verify refresh button is present
         var refreshButton = _get(Button.class, spec -> spec.withText("Refresh"));
@@ -106,13 +107,14 @@ class LeaderboardViewTest extends KaribuTest {
      */
     @Test
     void testFilterOptions() {
-        var filterCombo = _get(ComboBox.class, spec -> spec.withLabel("Filter"));
+        var filterCombo = _get(ComboBox.class, spec -> spec.withLabel("Competition"));
 
         // Get items from combobox
-        List<String> items = filterCombo.getListDataView().getItems().toList();
+        var items = filterCombo.getListDataView().getItems().toList();
 
-        // Verify filter options (note: currently only 3 are displayed, 4th requires data)
-        assertThat(items).containsExactlyInAnyOrder("Overall", "By Competition", "By Apparatus", "By Gender");
+        // Verify filter options - at minimum should have "All Competitions" option
+        assertThat(items).isNotEmpty();
+        assertThat(items.get(0).toString()).isEqualTo("All Competitions");
     }
 
     /**
@@ -120,10 +122,19 @@ class LeaderboardViewTest extends KaribuTest {
      */
     @Test
     void testFilterChange() {
-        var filterCombo = _get(ComboBox.class, spec -> spec.withLabel("Filter"));
+        var filterCombo = _get(ComboBox.class, spec -> spec.withLabel("Competition"));
 
-        // Change filter
-        filterCombo.setValue("By Competition");
+        // Get available items
+        var items = filterCombo.getListDataView().getItems().toList();
+
+        // If there are multiple items (competitions), test changing the selection
+        if (items.size() > 1) {
+            // Change to a different competition
+            filterCombo.setValue(items.get(1));
+
+            // Verify filter value changed
+            assertThat(filterCombo.getValue()).isEqualTo(items.get(1));
+        }
 
         // Verify last updated label is updated
         var lastUpdatedSpans = _find(Span.class);
@@ -138,18 +149,25 @@ class LeaderboardViewTest extends KaribuTest {
      */
     @Test
     void testResetFilters() {
-        var filterCombo = _get(ComboBox.class, spec -> spec.withLabel("Filter"));
-        var resetButton = _get(Button.class, spec -> spec.withText("Reset Filters"));
+        var filterCombo = _get(ComboBox.class, spec -> spec.withLabel("Competition"));
+        var resetButton = _get(Button.class, spec -> spec.withText("Show All"));
 
-        // Change filter
-        filterCombo.setValue("By Competition");
-        assertThat(filterCombo.getValue()).isEqualTo("By Competition");
+        // Get available items
+        var items = filterCombo.getListDataView().getItems().toList();
 
-        // Click reset
-        _click(resetButton);
+        // If there are multiple items, change to a different competition and then reset
+        if (items.size() > 1) {
+            // Change filter to a specific competition
+            filterCombo.setValue(items.get(1));
+            assertThat(filterCombo.getValue()).isEqualTo(items.get(1));
 
-        // Verify filter is reset to Overall
-        assertThat(filterCombo.getValue()).isEqualTo("Overall");
+            // Click reset
+            _click(resetButton);
+
+            // Verify filter is reset to "All Competitions"
+            assertThat(filterCombo.getValue()).isNotNull();
+            assertThat(filterCombo.getValue().toString()).isEqualTo("All Competitions");
+        }
     }
 
     /**

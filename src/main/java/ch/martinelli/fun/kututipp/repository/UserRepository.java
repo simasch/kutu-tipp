@@ -94,17 +94,17 @@ public class UserRepository {
      * @return the created user record with generated ID
      */
     public AppUserRecord create(String username, String email, String passwordHash, UserRole role) {
-        OffsetDateTime now = OffsetDateTime.now();
+        var now = OffsetDateTime.now();
 
-        AppUserRecord record = dsl.newRecord(APP_USER);
-        record.setUsername(username);
-        record.setEmail(email.toLowerCase());
-        record.setPasswordHash(passwordHash);
-        record.setRole(role);
-        record.setCreatedAt(now);
-        record.setUpdatedAt(now);
-        record.store();
+        var appUser = dsl.newRecord(APP_USER);
+        appUser.setUsername(username);
+        appUser.setEmail(email.toLowerCase());
+        appUser.setPasswordHash(passwordHash);
+        appUser.setRole(role);
+        appUser.setCreatedAt(now);
+        appUser.setUpdatedAt(now);
+        appUser.store();
 
-        return record;
+        return appUser;
     }
 }

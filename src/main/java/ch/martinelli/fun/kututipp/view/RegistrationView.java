@@ -41,8 +41,6 @@ public class RegistrationView extends VerticalLayout {
 
     private final TextField usernameField;
     private final EmailField emailField;
-    private final PasswordField passwordField;
-    private final PasswordField passwordConfirmationField;
     private final Binder<RegistrationForm> binder;
 
     public RegistrationView(UserService userService) {
@@ -67,11 +65,11 @@ public class RegistrationView extends VerticalLayout {
         emailField.setHelperText("We'll use this for account recovery");
         emailField.setMaxLength(255);
 
-        passwordField = new PasswordField("Password");
+        var passwordField = new PasswordField("Password");
         passwordField.setRequired(true);
         passwordField.setHelperText("Minimum 8 characters with uppercase, lowercase, digit, and special character");
 
-        passwordConfirmationField = new PasswordField("Confirm Password");
+        var passwordConfirmationField = new PasswordField("Confirm Password");
         passwordConfirmationField.setRequired(true);
 
         // Create binder for form validation

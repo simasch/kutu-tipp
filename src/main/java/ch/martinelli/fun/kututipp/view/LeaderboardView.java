@@ -29,21 +29,6 @@ import java.util.List;
 import static ch.martinelli.fun.kututipp.db.Tables.COMPETITION;
 
 /**
- * Represents a competition option for the filter dropdown.
- */
-record CompetitionOption(Long id, String name) {
-    /**
-     * Special constant for "All Competitions" option.
-     */
-    static final CompetitionOption ALL = new CompetitionOption(null, "All Competitions");
-
-    @Override
-    public String toString() {
-        return name;
-    }
-}
-
-/**
  * Leaderboard view showing user rankings and statistics.
  * Implements UC-015: View Leaderboard.
  * <p>
@@ -303,5 +288,20 @@ public class LeaderboardView extends VerticalLayout {
                     grid.select(entry);
                     grid.scrollToIndex(entries.indexOf(entry));
                 });
+    }
+
+    /**
+     * Represents a competition option for the filter dropdown.
+     */
+    record CompetitionOption(Long id, String name) {
+        /**
+         * Special constant for "All Competitions" option.
+         */
+        static final CompetitionOption ALL = new CompetitionOption(null, "All Competitions");
+
+        @Override
+        public String toString() {
+            return name;
+        }
     }
 }
