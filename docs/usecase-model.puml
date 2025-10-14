@@ -1,0 +1,103 @@
+@startuml Kutu-Tipp Use Case Model
+
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Tipper\n(User)" as User
+actor "Administrator" as Admin
+
+rectangle "Kutu-Tipp System" {
+
+  package "Authentication" {
+    usecase "UC-001\nRegister Account" as UC1
+    usecase "UC-002\nLogin" as UC2
+  }
+
+  package "Competition Management" {
+    usecase "UC-003\nView Competitions" as UC3
+    usecase "UC-004\nCreate Competition" as UC4
+    usecase "UC-005\nManage Gymnasts" as UC5
+    usecase "UC-006\nManage Apparatus" as UC6
+    usecase "UC-007\nConfigure Competition Entries" as UC7
+  }
+
+  package "Prediction" {
+    usecase "UC-008\nMake Predictions" as UC8
+    usecase "UC-009\nView Own Predictions" as UC9
+    usecase "UC-010\nEdit Predictions" as UC10
+  }
+
+  package "Results & Scoring" {
+    usecase "UC-011\nEnter Actual Scores" as UC11
+    usecase "UC-012\nImport Results (CSV/Excel)" as UC12
+    usecase "UC-013\nView Live Results" as UC13
+    usecase "UC-014\nCalculate Points" as UC14
+  }
+
+  package "Leaderboard & Statistics" {
+    usecase "UC-015\nView Leaderboard" as UC15
+    usecase "UC-016\nView Competition Details" as UC16
+    usecase "UC-017\nView History" as UC17
+    usecase "UC-018\nView Statistics by Apparatus" as UC18
+  }
+}
+
+' User relationships
+User --> UC1
+User --> UC2
+User --> UC3
+User --> UC8
+User --> UC9
+User --> UC10
+User --> UC13
+User --> UC15
+User --> UC16
+User --> UC17
+User --> UC18
+
+' Admin relationships
+Admin --> UC2
+Admin --> UC3
+Admin --> UC4
+Admin --> UC5
+Admin --> UC6
+Admin --> UC7
+Admin --> UC11
+Admin --> UC12
+Admin --> UC13
+Admin --> UC15
+Admin --> UC16
+
+' Include relationships
+UC8 ..> UC2 : <<include>>
+UC9 ..> UC2 : <<include>>
+UC10 ..> UC2 : <<include>>
+UC15 ..> UC14 : <<include>>
+UC16 ..> UC14 : <<include>>
+
+' Extend relationships
+UC10 ..> UC8 : <<extend>>\n(before deadline)
+UC12 ..> UC11 : <<extend>>
+
+' Notes
+note right of UC8
+  Predictions can be made until
+  30 minutes before competition start
+end note
+
+note right of UC14
+  Points calculated based on:
+  - Exact: 3 points
+  - ±5%: 2 points
+  - ±10%: 1 point
+  - >10%: 0 points
+end note
+
+note right of UC4
+  Competition has status:
+  - upcoming
+  - live
+  - finished
+end note
+
+@enduml
