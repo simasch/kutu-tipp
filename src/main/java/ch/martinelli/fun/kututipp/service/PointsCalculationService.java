@@ -1,6 +1,5 @@
 package ch.martinelli.fun.kututipp.service;
 
-import ch.martinelli.fun.kututipp.db.tables.records.CompetitionEntryRecord;
 import ch.martinelli.fun.kututipp.db.tables.records.PredictionRecord;
 import org.jooq.DSLContext;
 import org.slf4j.Logger;
@@ -8,11 +7,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.List;
 
 import static ch.martinelli.fun.kututipp.db.Tables.*;
+import static org.jooq.impl.DSL.sum;
 
 /**
  * Service for calculating points based on prediction accuracy.
@@ -262,7 +260,7 @@ public class PointsCalculationService {
      * @return Total points earned in this competition
      */
     public int calculateUserCompetitionTotal(Long userId, Long competitionId) {
-        var result = dsl.select(PREDICTION.POINTS_EARNED.sum())
+        var result = dsl.select(sum(PREDICTION.POINTS_EARNED))
                 .from(PREDICTION)
                 .join(COMPETITION_ENTRY).on(PREDICTION.COMPETITION_ENTRY_ID.eq(COMPETITION_ENTRY.ID))
                 .where(PREDICTION.USER_ID.eq(userId))
@@ -281,7 +279,7 @@ public class PointsCalculationService {
      * @return Total points earned across all competitions
      */
     public int calculateUserOverallTotal(Long userId) {
-        var result = dsl.select(PREDICTION.POINTS_EARNED.sum())
+        var result = dsl.select(sum(PREDICTION.POINTS_EARNED))
                 .from(PREDICTION)
                 .where(PREDICTION.USER_ID.eq(userId))
                 .and(PREDICTION.POINTS_EARNED.isNotNull())
