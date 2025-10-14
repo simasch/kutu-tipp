@@ -22,9 +22,9 @@ rectangle "Kutu-Tipp System" {
   }
 
   package "Prediction" {
-    usecase "UC-008\nMake Predictions" as UC8
-    usecase "UC-009\nView Own Predictions" as UC9
-    usecase "UC-010\nEdit Predictions" as UC10
+    usecase "UC-008\nMake Predictions" as UC8 #LightGreen
+    usecase "UC-009\nView Own Predictions" as UC9 #LightGreen
+    usecase "UC-010\nEdit Predictions" as UC10 #LightGreen
   }
 
   package "Results & Scoring" {
