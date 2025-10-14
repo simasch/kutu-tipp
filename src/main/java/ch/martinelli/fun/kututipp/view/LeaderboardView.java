@@ -18,11 +18,30 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
+import org.jooq.DSLContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+
+import static ch.martinelli.fun.kututipp.db.Tables.COMPETITION;
+
+/**
+ * Represents a competition option for the filter dropdown.
+ */
+record CompetitionOption(Long id, String name) {
+    /**
+     * Special constant for "All Competitions" option.
+     */
+    static final CompetitionOption ALL = new CompetitionOption(null, "All Competitions");
+
+    @Override
+    public String toString() {
+        return name;
+    }
+}
 
 /**
  * Leaderboard view showing user rankings and statistics.
@@ -30,7 +49,7 @@ import java.util.List;
  * <p>
  * Features:
  * - Overall rankings across all competitions
- * - Filtering by competition, apparatus, and gender
+ * - Filtering by competition
  * - Highlighting of current user
  * - Real-time refresh capability
  */
@@ -41,16 +60,18 @@ public class LeaderboardView extends VerticalLayout {
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
 
-    private final LeaderboardService leaderboardService;
+    private final transient LeaderboardService leaderboardService;
+    private final transient DSLContext dsl;
     private final Grid<LeaderboardEntry> grid;
     private final Span lastUpdatedLabel;
     private String currentUsername;
 
     // Filter components
-    private ComboBox<String> filterTypeCombo;
+    private ComboBox<CompetitionOption> competitionFilter;
 
-    public LeaderboardView(LeaderboardService leaderboardService) {
+    public LeaderboardView(LeaderboardService leaderboardService, DSLContext dsl) {
         this.leaderboardService = leaderboardService;
+        this.dsl = dsl;
 
         // Get current username
         var authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -95,31 +116,54 @@ public class LeaderboardView extends VerticalLayout {
     }
 
     /**
-     * Creates the filter bar with filter options.
+     * Creates the filter bar with competition filter.
      */
     private HorizontalLayout createFilterBar() {
         var filterBar = new HorizontalLayout();
         filterBar.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
         filterBar.setSpacing(true);
 
-        // Filter type selector
-        filterTypeCombo = new ComboBox<>("Filter");
-        filterTypeCombo.setItems("Overall", "By Competition", "By Apparatus", "By Gender");
-        filterTypeCombo.setValue("Overall");
-        filterTypeCombo.setWidth("200px");
-        filterTypeCombo.addValueChangeListener(event -> {
-            // TODO: Implement filtering when competition/apparatus data is available
-            refreshLeaderboard();
-        });
+        // Load competitions from database
+        var competitions = loadCompetitions();
 
-        var resetButton = new Button("Reset Filters", event -> {
-            filterTypeCombo.setValue("Overall");
+        // Competition filter
+        competitionFilter = new ComboBox<>("Competition");
+        competitionFilter.setItems(competitions);
+        competitionFilter.setItemLabelGenerator(CompetitionOption::toString);
+        competitionFilter.setValue(CompetitionOption.ALL);
+        competitionFilter.setWidth("300px");
+        competitionFilter.addValueChangeListener(event -> refreshLeaderboard());
+
+        var resetButton = new Button("Show All", event -> {
+            competitionFilter.setValue(CompetitionOption.ALL);
             refreshLeaderboard();
         });
         resetButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 
-        filterBar.add(filterTypeCombo, resetButton);
+        filterBar.add(competitionFilter, resetButton);
         return filterBar;
+    }
+
+    /**
+     * Loads all competitions from the database.
+     */
+    private List<CompetitionOption> loadCompetitions() {
+        var competitions = new ArrayList<CompetitionOption>();
+
+        // Add "All Competitions" option first
+        competitions.add(CompetitionOption.ALL);
+
+        // Load competitions from database, ordered by date descending (most recent first)
+        var competitionRecords = dsl.selectFrom(COMPETITION)
+                .orderBy(COMPETITION.DATE.desc())
+                .fetch();
+
+        // Convert to CompetitionOption objects
+        for (var record : competitionRecords) {
+            competitions.add(new CompetitionOption(record.getId(), record.getName()));
+        }
+
+        return competitions;
     }
 
     /**
@@ -234,15 +278,15 @@ public class LeaderboardView extends VerticalLayout {
     private void refreshLeaderboard() {
         List<LeaderboardEntry> entries;
 
-        // Get filter selection
-        var filterType = filterTypeCombo.getValue();
+        // Get selected competition
+        var selectedCompetition = competitionFilter.getValue();
 
-        if ("Overall".equals(filterType) || filterType == null) {
+        if (selectedCompetition == null || selectedCompetition.id() == null) {
+            // Show overall leaderboard (all competitions)
             entries = leaderboardService.getOverallLeaderboard(currentUsername);
         } else {
-            // For now, just show overall leaderboard
-            // TODO: Implement specific filtering when competition/apparatus data is available
-            entries = leaderboardService.getOverallLeaderboard(currentUsername);
+            // Show leaderboard for specific competition
+            entries = leaderboardService.getCompetitionLeaderboard(selectedCompetition.id(), currentUsername);
         }
 
         grid.setItems(entries);
