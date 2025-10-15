@@ -14,7 +14,7 @@ package ch.martinelli.fun.kututipp.dto;
  * @param trend             Rank trend indicator (up/down/stable/new)
  * @param isCurrentUser     True if this entry represents the currently logged-in user
  */
-public record LeaderboardEntry(
+public record LeaderboardEntryDto(
         Long userId,
         String username,
         int rank,

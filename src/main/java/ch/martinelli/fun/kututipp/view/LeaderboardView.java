@@ -1,6 +1,6 @@
 package ch.martinelli.fun.kututipp.view;
 
-import ch.martinelli.fun.kututipp.dto.LeaderboardEntry;
+import ch.martinelli.fun.kututipp.dto.LeaderboardEntryDto;
 import ch.martinelli.fun.kututipp.dto.RankTrend;
 import ch.martinelli.fun.kututipp.repository.CompetitionRepository;
 import ch.martinelli.fun.kututipp.service.LeaderboardService;
@@ -45,7 +45,7 @@ public class LeaderboardView extends VerticalLayout {
 
     private final transient LeaderboardService leaderboardService;
     private final transient CompetitionRepository competitionRepository;
-    private final Grid<LeaderboardEntry> grid;
+    private final Grid<LeaderboardEntryDto> grid;
     private final Span lastUpdatedLabel;
     private String currentUsername;
 
@@ -169,8 +169,8 @@ public class LeaderboardView extends VerticalLayout {
     /**
      * Creates and configures the leaderboard grid.
      */
-    private Grid<LeaderboardEntry> createGrid() {
-        var leaderboardGrid = new Grid<LeaderboardEntry>();
+    private Grid<LeaderboardEntryDto> createGrid() {
+        var leaderboardGrid = new Grid<LeaderboardEntryDto>();
         leaderboardGrid.setHeight("600px");
 
         // Rank column with special rendering for top 3
@@ -199,25 +199,25 @@ public class LeaderboardView extends VerticalLayout {
         })).setHeader("Rank").setWidth("100px").setFlexGrow(0);
 
         // Username column
-        leaderboardGrid.addColumn(LeaderboardEntry::username)
+        leaderboardGrid.addColumn(LeaderboardEntryDto::username)
                 .setHeader("Username")
                 .setAutoWidth(true)
                 .setFlexGrow(1);
 
         // Total points column
-        leaderboardGrid.addColumn(LeaderboardEntry::totalPoints)
+        leaderboardGrid.addColumn(LeaderboardEntryDto::totalPoints)
                 .setHeader("Total Points")
                 .setWidth("120px")
                 .setFlexGrow(0);
 
         // Predictions made column
-        leaderboardGrid.addColumn(LeaderboardEntry::totalPredictions)
+        leaderboardGrid.addColumn(LeaderboardEntryDto::totalPredictions)
                 .setHeader("Predictions")
                 .setWidth("120px")
                 .setFlexGrow(0);
 
         // Exact predictions column (3 points)
-        leaderboardGrid.addColumn(LeaderboardEntry::exactPredictions)
+        leaderboardGrid.addColumn(LeaderboardEntryDto::exactPredictions)
                 .setHeader("Exact (3pts)")
                 .setWidth("120px")
                 .setFlexGrow(0);
@@ -257,7 +257,7 @@ public class LeaderboardView extends VerticalLayout {
      * Refreshes the leaderboard data from the service.
      */
     private void refreshLeaderboard() {
-        List<LeaderboardEntry> entries;
+        List<LeaderboardEntryDto> entries;
 
         // Get selected competition
         var selectedCompetition = competitionFilter.getValue();
@@ -278,7 +278,7 @@ public class LeaderboardView extends VerticalLayout {
 
         // If current user is in the list, scroll to their position
         entries.stream()
-                .filter(LeaderboardEntry::isCurrentUser)
+                .filter(LeaderboardEntryDto::isCurrentUser)
                 .findFirst()
                 .ifPresent(entry -> {
                     grid.select(entry);

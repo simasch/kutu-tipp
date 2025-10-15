@@ -1,30 +1,30 @@
 package ch.martinelli.fun.kututipp.service;
 
-import ch.martinelli.fun.kututipp.dto.LeaderboardEntry;
+import ch.martinelli.fun.kututipp.dto.LeaderboardEntryDto;
 import ch.martinelli.fun.kututipp.dto.LeaderboardFilter;
 import ch.martinelli.fun.kututipp.dto.RankTrend;
 import ch.martinelli.fun.kututipp.repository.LeaderboardRepository;
-import org.jooq.Record;
 import org.jooq.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 import static ch.martinelli.fun.kututipp.db.Tables.APP_USER;
 
 /**
- * Service for retrieving and calculating leaderboard rankings.
+ * Service for retrieving leaderboard rankings.
  * Implements UC-015: View Leaderboard.
  * <p>
  * Business Rules (BR-001):
  * - Primary Ranking: Total points (sum of all prediction points)
  * - Tie Breaker 1: Number of exact predictions (3 points)
  * - Tie Breaker 2: Total number of predictions made (more predictions = higher rank)
- * - Tie Breaker 3: Earlier registration date
+ * <p>
+ * Note: Rankings are calculated in the database using SQL window functions (RANK())
+ * for better performance and simpler code.
  */
 @Service
 public class LeaderboardService {
@@ -43,7 +43,7 @@ public class LeaderboardService {
      *
      * @return List of leaderboard entries sorted by rank
      */
-    public List<LeaderboardEntry> getOverallLeaderboard() {
+    public List<LeaderboardEntryDto> getOverallLeaderboard() {
         return getOverallLeaderboard(null);
     }
 
@@ -53,7 +53,7 @@ public class LeaderboardService {
      * @param currentUsername Username of currently logged-in user (for highlighting)
      * @return List of leaderboard entries sorted by rank
      */
-    public List<LeaderboardEntry> getOverallLeaderboard(String currentUsername) {
+    public List<LeaderboardEntryDto> getOverallLeaderboard(String currentUsername) {
         log.debug("Fetching overall leaderboard");
 
         var results = leaderboardRepository.getOverallLeaderboard();
@@ -68,7 +68,7 @@ public class LeaderboardService {
      * @param currentUsername Username of currently logged-in user (for highlighting)
      * @return Competition-specific rankings
      */
-    public List<LeaderboardEntry> getCompetitionLeaderboard(Long competitionId, String currentUsername) {
+    public List<LeaderboardEntryDto> getCompetitionLeaderboard(Long competitionId, String currentUsername) {
         log.debug("Fetching leaderboard for competition: {}", competitionId);
 
         var results = leaderboardRepository.getCompetitionLeaderboard(competitionId);
@@ -83,7 +83,7 @@ public class LeaderboardService {
      * @param currentUsername Username of currently logged-in user (for highlighting)
      * @return Apparatus-specific rankings
      */
-    public List<LeaderboardEntry> getApparatusLeaderboard(Long apparatusId, String currentUsername) {
+    public List<LeaderboardEntryDto> getApparatusLeaderboard(Long apparatusId, String currentUsername) {
         log.debug("Fetching leaderboard for apparatus: {}", apparatusId);
 
         var results = leaderboardRepository.getApparatusLeaderboard(apparatusId);
@@ -98,7 +98,7 @@ public class LeaderboardService {
      * @param currentUsername Username of currently logged-in user (for highlighting)
      * @return Filtered leaderboard entries
      */
-    public List<LeaderboardEntry> getFilteredLeaderboard(LeaderboardFilter filter, String currentUsername) {
+    public List<LeaderboardEntryDto> getFilteredLeaderboard(LeaderboardFilter filter, String currentUsername) {
         log.debug("Fetching filtered leaderboard: {}", filter);
 
         var results = leaderboardRepository.getFilteredLeaderboard(filter);
@@ -119,7 +119,7 @@ public class LeaderboardService {
         return leaderboard.stream()
                 .filter(entry -> entry.userId().equals(userId))
                 .findFirst()
-                .map(LeaderboardEntry::rank)
+                .map(LeaderboardEntryDto::rank)
                 .orElse(0);
     }
 
@@ -145,30 +145,29 @@ public class LeaderboardService {
     }
 
     /**
-     * Calculate rankings from query results.
-     * Implements BR-001 ranking rules with tiebreakers.
+     * Convert query results to LeaderboardEntryDto list.
+     * Rankings are now calculated in SQL using window functions (BR-001).
      *
-     * @param results         Query results
+     * @param results         Query results (already sorted and ranked by database)
      * @param currentUsername Username of currently logged-in user (for highlighting)
-     * @return Sorted list of leaderboard entries with ranks assigned
+     * @return List of leaderboard entries with ranks from database
      */
-    private List<LeaderboardEntry> calculateRankings(Result<? extends Record> results, String currentUsername) {
-        // Convert records to entries with initial data
-        var entries = new ArrayList<LeaderboardEntry>();
+    private List<LeaderboardEntryDto> calculateRankings(Result<? extends org.jooq.Record> results, String currentUsername) {
+        var entries = new ArrayList<LeaderboardEntryDto>();
 
         for (var result : results) {
             var userId = result.get(APP_USER.ID);
             var username = result.get(APP_USER.USERNAME);
+            var rank = result.get("rank", Integer.class);
             var totalPoints = result.get("total_points", Integer.class);
             var totalPredictions = result.get("total_predictions", Integer.class);
             var exactPredictions = result.get("exact_predictions", Integer.class);
             var avgPoints = result.get("avg_points", Double.class);
 
-            // Create entry without rank (will be assigned after sorting)
-            var entry = new LeaderboardEntry(
+            var entry = new LeaderboardEntryDto(
                     userId,
                     username,
-                    0, // Rank will be assigned below
+                    rank,
                     totalPoints,
                     totalPredictions,
                     exactPredictions,
@@ -180,55 +179,7 @@ public class LeaderboardService {
             entries.add(entry);
         }
 
-        // Sort by ranking rules (BR-001)
-        entries.sort(Comparator
-                .comparing(LeaderboardEntry::totalPoints).reversed()
-                .thenComparing(LeaderboardEntry::exactPredictions).reversed()
-                .thenComparing(LeaderboardEntry::totalPredictions).reversed()
-        );
-
-        // Assign ranks handling ties
-        var rankedEntries = new ArrayList<LeaderboardEntry>();
-        var rank = 1;
-
-        for (var i = 0; i < entries.size(); i++) {
-            var entry = entries.get(i);
-
-            // If not first entry and scores differ, update rank
-            if (i > 0 && !hasSameScore(entry, entries.get(i - 1))) {
-                rank = i + 1;
-            }
-
-            // Create new entry with rank assigned
-            var rankedEntry = new LeaderboardEntry(
-                    entry.userId(),
-                    entry.username(),
-                    rank,
-                    entry.totalPoints(),
-                    entry.totalPredictions(),
-                    entry.exactPredictions(),
-                    entry.avgPoints(),
-                    entry.trend(),
-                    entry.isCurrentUser()
-            );
-
-            rankedEntries.add(rankedEntry);
-        }
-
-        log.debug("Calculated rankings for {} users", rankedEntries.size());
-        return rankedEntries;
-    }
-
-    /**
-     * Check if two entries have the same score according to tiebreaker rules.
-     *
-     * @param e1 First entry
-     * @param e2 Second entry
-     * @return true if scores are equal (considering all tiebreakers)
-     */
-    private boolean hasSameScore(LeaderboardEntry e1, LeaderboardEntry e2) {
-        return e1.totalPoints() == e2.totalPoints()
-                && e1.exactPredictions() == e2.exactPredictions()
-                && e1.totalPredictions() == e2.totalPredictions();
+        log.debug("Mapped {} ranked users from database", entries.size());
+        return entries;
     }
 }
