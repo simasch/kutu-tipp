@@ -6,7 +6,6 @@ import ch.martinelli.fun.kututipp.exception.EmailAlreadyExistsException;
 import ch.martinelli.fun.kututipp.exception.RegistrationException;
 import ch.martinelli.fun.kututipp.exception.UsernameAlreadyExistsException;
 import ch.martinelli.fun.kututipp.repository.UserRepository;
-import ch.martinelli.fun.kututipp.validation.EmailValidator;
 import ch.martinelli.fun.kututipp.validation.PasswordValidator;
 import ch.martinelli.fun.kututipp.validation.UsernameValidator;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -72,12 +71,6 @@ public class UserService {
         var usernameErrors = UsernameValidator.validate(username);
         if (!usernameErrors.isEmpty()) {
             throw new RegistrationException(String.join(", ", usernameErrors));
-        }
-
-        // Validate email
-        var emailErrors = EmailValidator.validate(email);
-        if (!emailErrors.isEmpty()) {
-            throw new RegistrationException(String.join(", ", emailErrors));
         }
 
         // Validate password

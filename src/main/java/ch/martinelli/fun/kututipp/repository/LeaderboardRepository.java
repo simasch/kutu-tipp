@@ -18,6 +18,11 @@ import static org.jooq.impl.DSL.*;
 @Repository
 public class LeaderboardRepository {
 
+    private static final String TOTAL_POINTS = "total_points";
+    private static final String TOTAL_PREDICTIONS = "total_predictions";
+    private static final String EXACT_PREDICTIONS = "exact_predictions";
+    private static final String AVG_POINTS = "avg_points";
+
     private final DSLContext dsl;
 
     public LeaderboardRepository(DSLContext dsl) {
@@ -34,10 +39,10 @@ public class LeaderboardRepository {
         var pointsField = calculatePoints(PREDICTION.PREDICTED_SCORE, COMPETITION_ENTRY.ACTUAL_SCORE);
 
         // Define field aliases for aggregations
-        var totalPointsField = coalesce(sum(pointsField), 0).as("total_points");
-        var totalPredictionsField = count(PREDICTION.ID).as("total_predictions");
-        var exactPredictionsField = count(when(pointsField.eq(3), 1)).as("exact_predictions");
-        var avgPointsField = coalesce(avg(pointsField), 0.0).as("avg_points");
+        var totalPointsField = coalesce(sum(pointsField), 0).as(TOTAL_POINTS);
+        var totalPredictionsField = count(PREDICTION.ID).as(TOTAL_PREDICTIONS);
+        var exactPredictionsField = count(when(pointsField.eq(3), 1)).as(EXACT_PREDICTIONS);
+        var avgPointsField = coalesce(avg(pointsField), 0.0).as(AVG_POINTS);
 
         // Query with inner join to exclude users without predictions
         return dsl.select(
@@ -68,10 +73,10 @@ public class LeaderboardRepository {
         // Calculate points on-the-fly using database function
         var pointsField = calculatePoints(PREDICTION.PREDICTED_SCORE, COMPETITION_ENTRY.ACTUAL_SCORE);
 
-        var totalPointsField = coalesce(sum(pointsField), 0).as("total_points");
-        var totalPredictionsField = count(PREDICTION.ID).as("total_predictions");
-        var exactPredictionsField = count(when(pointsField.eq(3), 1)).as("exact_predictions");
-        var avgPointsField = coalesce(avg(pointsField), 0.0).as("avg_points");
+        var totalPointsField = coalesce(sum(pointsField), 0).as(TOTAL_POINTS);
+        var totalPredictionsField = count(PREDICTION.ID).as(TOTAL_PREDICTIONS);
+        var exactPredictionsField = count(when(pointsField.eq(3), 1)).as(EXACT_PREDICTIONS);
+        var avgPointsField = coalesce(avg(pointsField), 0.0).as(AVG_POINTS);
 
         return dsl.select(
                         APP_USER.ID,
@@ -102,10 +107,10 @@ public class LeaderboardRepository {
         // Calculate points on-the-fly using database function
         var pointsField = calculatePoints(PREDICTION.PREDICTED_SCORE, COMPETITION_ENTRY.ACTUAL_SCORE);
 
-        var totalPointsField = coalesce(sum(pointsField), 0).as("total_points");
-        var totalPredictionsField = count(PREDICTION.ID).as("total_predictions");
-        var exactPredictionsField = count(when(pointsField.eq(3), 1)).as("exact_predictions");
-        var avgPointsField = coalesce(avg(pointsField), 0.0).as("avg_points");
+        var totalPointsField = coalesce(sum(pointsField), 0).as(TOTAL_POINTS);
+        var totalPredictionsField = count(PREDICTION.ID).as(TOTAL_PREDICTIONS);
+        var exactPredictionsField = count(when(pointsField.eq(3), 1)).as(EXACT_PREDICTIONS);
+        var avgPointsField = coalesce(avg(pointsField), 0.0).as(AVG_POINTS);
 
         return dsl.select(
                         APP_USER.ID,
@@ -137,10 +142,10 @@ public class LeaderboardRepository {
         // Calculate points on-the-fly using database function
         var pointsField = calculatePoints(PREDICTION.PREDICTED_SCORE, COMPETITION_ENTRY.ACTUAL_SCORE);
 
-        var totalPointsField = coalesce(sum(pointsField), 0).as("total_points");
-        var totalPredictionsField = count(PREDICTION.ID).as("total_predictions");
-        var exactPredictionsField = count(when(pointsField.eq(3), 1)).as("exact_predictions");
-        var avgPointsField = coalesce(avg(pointsField), 0.0).as("avg_points");
+        var totalPointsField = coalesce(sum(pointsField), 0).as(TOTAL_POINTS);
+        var totalPredictionsField = count(PREDICTION.ID).as(TOTAL_PREDICTIONS);
+        var exactPredictionsField = count(when(pointsField.eq(3), 1)).as(EXACT_PREDICTIONS);
+        var avgPointsField = coalesce(avg(pointsField), 0.0).as(AVG_POINTS);
 
         var queryBuilder = dsl.select(
                         APP_USER.ID,

@@ -25,6 +25,9 @@ import static org.jooq.impl.DSL.val;
 @Repository
 public class PredictionRepository {
 
+    private static final String TOTAL_ENTRIES = "total_entries";
+    private static final String PREDICTED_ENTRIES = "predicted_entries";
+
     private final DSLContext dsl;
 
     public PredictionRepository(DSLContext dsl) {
@@ -224,30 +227,30 @@ public class PredictionRepository {
         // Subquery to count total entries per competition
         var totalEntriesSubquery = dsl.select(
                         COMPETITION_ENTRY.COMPETITION_ID,
-                        count(COMPETITION_ENTRY.ID).as("total_entries")
+                        count(COMPETITION_ENTRY.ID).as(TOTAL_ENTRIES)
                 )
                 .from(COMPETITION_ENTRY)
                 .groupBy(COMPETITION_ENTRY.COMPETITION_ID)
-                .asTable("total_entries");
+                .asTable(TOTAL_ENTRIES);
 
         // Subquery to count predicted entries per competition for this user
         var predictedEntriesSubquery = dsl.select(
                         COMPETITION_ENTRY.COMPETITION_ID,
-                        count(PREDICTION.ID).as("predicted_entries")
+                        count(PREDICTION.ID).as(PREDICTED_ENTRIES)
                 )
                 .from(PREDICTION)
                 .join(COMPETITION_ENTRY).on(PREDICTION.COMPETITION_ENTRY_ID.eq(COMPETITION_ENTRY.ID))
                 .where(PREDICTION.USER_ID.eq(userId))
                 .groupBy(COMPETITION_ENTRY.COMPETITION_ID)
-                .asTable("predicted_entries");
+                .asTable(PREDICTED_ENTRIES);
 
         return dsl.select(
                         COMPETITION.ID,
                         COMPETITION.NAME,
                         COMPETITION.DATE,
                         COMPETITION.STATUS,
-                        totalEntriesSubquery.field("total_entries", Integer.class),
-                        predictedEntriesSubquery.field("predicted_entries", Integer.class),
+                        totalEntriesSubquery.field(TOTAL_ENTRIES, Integer.class),
+                        predictedEntriesSubquery.field(PREDICTED_ENTRIES, Integer.class),
                         COMPETITION.STATUS.eq(CompetitionStatus.upcoming).and(COMPETITION.DATE.gt(val(deadline)))
                 )
                 .from(COMPETITION)

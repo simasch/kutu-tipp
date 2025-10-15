@@ -19,6 +19,7 @@ import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
+import com.vaadin.flow.data.validator.EmailValidator;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
@@ -79,6 +80,7 @@ public class RegistrationView extends VerticalLayout {
                 .bind(RegistrationForm::getUsername, RegistrationForm::setUsername);
         binder.forField(emailField)
                 .asRequired("Email is required")
+                .withValidator(new EmailValidator("Please enter a valid email address"))
                 .bind(RegistrationForm::getEmail, RegistrationForm::setEmail);
         binder.forField(passwordField)
                 .asRequired("Password is required")
