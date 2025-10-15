@@ -6,6 +6,7 @@ import ch.martinelli.fun.kututipp.dto.CompetitionDto;
 import ch.martinelli.fun.kututipp.dto.CompetitionEntryDto;
 import ch.martinelli.fun.kututipp.dto.UserCompetitionSummaryDto;
 import org.jooq.DSLContext;
+import org.jooq.Records;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
@@ -15,6 +16,7 @@ import java.util.Optional;
 
 import static ch.martinelli.fun.kututipp.db.Tables.*;
 import static org.jooq.impl.DSL.count;
+import static org.jooq.impl.DSL.val;
 
 /**
  * Repository for prediction database operations using jOOQ.
@@ -39,17 +41,17 @@ public class PredictionRepository {
         var now = OffsetDateTime.now();
         var deadline = now.plusMinutes(30);
 
-        return dsl.selectFrom(COMPETITION)
+        return dsl.select(
+                        COMPETITION.ID,
+                        COMPETITION.NAME,
+                        COMPETITION.DATE,
+                        COMPETITION.STATUS
+                )
+                .from(COMPETITION)
                 .where(COMPETITION.STATUS.eq(CompetitionStatus.upcoming))
-                .and(COMPETITION.DATE.greaterThan(deadline))
+                .and(COMPETITION.DATE.gt(deadline))
                 .orderBy(COMPETITION.DATE.asc())
-                .fetch()
-                .map(competition -> new CompetitionDto(
-                        competition.getId(),
-                        competition.getName(),
-                        competition.getDate(),
-                        competition.getStatus()
-                ));
+                .fetch(Records.mapping(CompetitionDto::new));
     }
 
     /**
@@ -78,16 +80,7 @@ public class PredictionRepository {
                 )
                 .where(COMPETITION_ENTRY.COMPETITION_ID.eq(competitionId))
                 .orderBy(GYMNAST.NAME, APPARATUS.NAME)
-                .fetch()
-                .map(competitionEntry -> new CompetitionEntryDto(
-                        competitionEntry.get(COMPETITION_ENTRY.ID),
-                        competitionEntry.get(GYMNAST.NAME),
-                        competitionEntry.get(GYMNAST.TEAM_NAME),
-                        competitionEntry.get(GYMNAST.GENDER),
-                        competitionEntry.get(APPARATUS.NAME),
-                        competitionEntry.get(PREDICTION.PREDICTED_SCORE),
-                        competitionEntry.get(COMPETITION_ENTRY.ACTUAL_SCORE)
-                ));
+                .fetch(Records.mapping(CompetitionEntryDto::new));
     }
 
     /**
@@ -229,13 +222,7 @@ public class PredictionRepository {
                 .from(COMPETITION)
                 .join(COMPETITION_ENTRY).on(COMPETITION_ENTRY.COMPETITION_ID.eq(COMPETITION.ID))
                 .where(COMPETITION_ENTRY.ID.eq(competitionEntryId))
-                .fetchOptional()
-                .map(competition -> new CompetitionDto(
-                        competition.get(COMPETITION.ID),
-                        competition.get(COMPETITION.NAME),
-                        competition.get(COMPETITION.DATE),
-                        competition.get(COMPETITION.STATUS)
-                ));
+                .fetchOptional(Records.mapping(CompetitionDto::new));
     }
 
     /**
@@ -275,7 +262,8 @@ public class PredictionRepository {
                         COMPETITION.DATE,
                         COMPETITION.STATUS,
                         totalEntriesSubquery.field("total_entries", Integer.class),
-                        predictedEntriesSubquery.field("predicted_entries", Integer.class)
+                        predictedEntriesSubquery.field("predicted_entries", Integer.class),
+                        COMPETITION.STATUS.eq(CompetitionStatus.upcoming).and(COMPETITION.DATE.gt(val(deadline)))
                 )
                 .from(COMPETITION)
                 .join(totalEntriesSubquery).on(
@@ -285,15 +273,6 @@ public class PredictionRepository {
                         predictedEntriesSubquery.field(COMPETITION_ENTRY.COMPETITION_ID).eq(COMPETITION.ID)
                 )
                 .orderBy(COMPETITION.DATE.desc())
-                .fetch()
-                .map(competition -> new UserCompetitionSummaryDto(
-                        competition.get(COMPETITION.ID),
-                        competition.get(COMPETITION.NAME),
-                        competition.get(COMPETITION.DATE),
-                        competition.get(COMPETITION.STATUS),
-                        competition.get("total_entries", Integer.class),
-                        competition.get("predicted_entries", Integer.class),
-                        competition.get(COMPETITION.STATUS) == CompetitionStatus.upcoming && competition.get(COMPETITION.DATE).isAfter(deadline)
-                ));
+                .fetch(Records.mapping(UserCompetitionSummaryDto::new));
     }
 }
