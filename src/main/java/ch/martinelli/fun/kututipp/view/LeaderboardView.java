@@ -2,6 +2,7 @@ package ch.martinelli.fun.kututipp.view;
 
 import ch.martinelli.fun.kututipp.dto.LeaderboardEntry;
 import ch.martinelli.fun.kututipp.dto.RankTrend;
+import ch.martinelli.fun.kututipp.repository.CompetitionRepository;
 import ch.martinelli.fun.kututipp.service.LeaderboardService;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -18,15 +19,12 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
-import org.jooq.DSLContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-
-import static ch.martinelli.fun.kututipp.db.Tables.COMPETITION;
 
 /**
  * Leaderboard view showing user rankings and statistics.
@@ -46,7 +44,7 @@ public class LeaderboardView extends VerticalLayout {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     private final transient LeaderboardService leaderboardService;
-    private final transient DSLContext dsl;
+    private final transient CompetitionRepository competitionRepository;
     private final Grid<LeaderboardEntry> grid;
     private final Span lastUpdatedLabel;
     private String currentUsername;
@@ -54,9 +52,9 @@ public class LeaderboardView extends VerticalLayout {
     // Filter components
     private ComboBox<CompetitionOption> competitionFilter;
 
-    public LeaderboardView(LeaderboardService leaderboardService, DSLContext dsl) {
+    public LeaderboardView(LeaderboardService leaderboardService, CompetitionRepository competitionRepository) {
         this.leaderboardService = leaderboardService;
-        this.dsl = dsl;
+        this.competitionRepository = competitionRepository;
 
         // Get current username
         var authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -139,9 +137,7 @@ public class LeaderboardView extends VerticalLayout {
         competitions.add(CompetitionOption.ALL);
 
         // Load competitions from database, ordered by date descending (most recent first)
-        var competitionRecords = dsl.selectFrom(COMPETITION)
-                .orderBy(COMPETITION.DATE.desc())
-                .fetch();
+        var competitionRecords = competitionRepository.findAll();
 
         // Convert to CompetitionOption objects
         for (var record : competitionRecords) {

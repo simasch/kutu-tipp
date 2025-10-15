@@ -3,10 +3,9 @@ package ch.martinelli.fun.kututipp.service;
 import ch.martinelli.fun.kututipp.dto.LeaderboardEntry;
 import ch.martinelli.fun.kututipp.dto.LeaderboardFilter;
 import ch.martinelli.fun.kututipp.dto.RankTrend;
-import org.jooq.DSLContext;
+import ch.martinelli.fun.kututipp.repository.LeaderboardRepository;
 import org.jooq.Record;
 import org.jooq.Result;
-import org.jooq.SelectConditionStep;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -15,9 +14,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-import static ch.martinelli.fun.kututipp.db.Routines.calculatePoints;
-import static ch.martinelli.fun.kututipp.db.Tables.*;
-import static org.jooq.impl.DSL.*;
+import static ch.martinelli.fun.kututipp.db.Tables.APP_USER;
 
 /**
  * Service for retrieving and calculating leaderboard rankings.
@@ -34,10 +31,10 @@ public class LeaderboardService {
 
     private static final Logger log = LoggerFactory.getLogger(LeaderboardService.class);
 
-    private final DSLContext dsl;
+    private final LeaderboardRepository leaderboardRepository;
 
-    public LeaderboardService(DSLContext dsl) {
-        this.dsl = dsl;
+    public LeaderboardService(LeaderboardRepository leaderboardRepository) {
+        this.leaderboardRepository = leaderboardRepository;
     }
 
     /**
@@ -59,33 +56,7 @@ public class LeaderboardService {
     public List<LeaderboardEntry> getOverallLeaderboard(String currentUsername) {
         log.debug("Fetching overall leaderboard");
 
-        // Calculate points on-the-fly using database function
-        var pointsField = calculatePoints(PREDICTION.PREDICTED_SCORE, COMPETITION_ENTRY.ACTUAL_SCORE);
-
-        // Define field aliases for aggregations
-        var totalPointsField = coalesce(sum(pointsField), 0).as("total_points");
-        var totalPredictionsField = count(PREDICTION.ID).as("total_predictions");
-        var exactPredictionsField = count(when(pointsField.eq(3), 1)).as("exact_predictions");
-        var avgPointsField = coalesce(avg(pointsField), 0.0).as("avg_points");
-
-        // Query with inner join to exclude users without predictions
-        var results = dsl.select(
-                        APP_USER.ID,
-                        APP_USER.USERNAME,
-                        APP_USER.CREATED_AT,
-                        totalPointsField,
-                        totalPredictionsField,
-                        exactPredictionsField,
-                        avgPointsField
-                )
-                .from(APP_USER)
-                .join(PREDICTION).on(APP_USER.ID.eq(PREDICTION.USER_ID))
-                .join(COMPETITION_ENTRY).on(PREDICTION.COMPETITION_ENTRY_ID.eq(COMPETITION_ENTRY.ID))
-                .join(COMPETITION).on(COMPETITION_ENTRY.COMPETITION_ID.eq(COMPETITION.ID))
-                .where(COMPETITION_ENTRY.ACTUAL_SCORE.isNotNull())
-                .groupBy(APP_USER.ID, APP_USER.USERNAME, APP_USER.CREATED_AT)
-                .fetch();
-
+        var results = leaderboardRepository.getOverallLeaderboard();
         return calculateRankings(results, currentUsername);
     }
 
@@ -100,32 +71,7 @@ public class LeaderboardService {
     public List<LeaderboardEntry> getCompetitionLeaderboard(Long competitionId, String currentUsername) {
         log.debug("Fetching leaderboard for competition: {}", competitionId);
 
-        // Calculate points on-the-fly using database function
-        var pointsField = calculatePoints(PREDICTION.PREDICTED_SCORE, COMPETITION_ENTRY.ACTUAL_SCORE);
-
-        var totalPointsField = coalesce(sum(pointsField), 0).as("total_points");
-        var totalPredictionsField = count(PREDICTION.ID).as("total_predictions");
-        var exactPredictionsField = count(when(pointsField.eq(3), 1)).as("exact_predictions");
-        var avgPointsField = coalesce(avg(pointsField), 0.0).as("avg_points");
-
-        var results = dsl.select(
-                        APP_USER.ID,
-                        APP_USER.USERNAME,
-                        APP_USER.CREATED_AT,
-                        totalPointsField,
-                        totalPredictionsField,
-                        exactPredictionsField,
-                        avgPointsField
-                )
-                .from(APP_USER)
-                .join(PREDICTION).on(APP_USER.ID.eq(PREDICTION.USER_ID))
-                .join(COMPETITION_ENTRY).on(PREDICTION.COMPETITION_ENTRY_ID.eq(COMPETITION_ENTRY.ID))
-                .join(COMPETITION).on(COMPETITION_ENTRY.COMPETITION_ID.eq(COMPETITION.ID))
-                .where(COMPETITION.ID.eq(competitionId))
-                .and(COMPETITION_ENTRY.ACTUAL_SCORE.isNotNull())
-                .groupBy(APP_USER.ID, APP_USER.USERNAME, APP_USER.CREATED_AT)
-                .fetch();
-
+        var results = leaderboardRepository.getCompetitionLeaderboard(competitionId);
         return calculateRankings(results, currentUsername);
     }
 
@@ -140,33 +86,7 @@ public class LeaderboardService {
     public List<LeaderboardEntry> getApparatusLeaderboard(Long apparatusId, String currentUsername) {
         log.debug("Fetching leaderboard for apparatus: {}", apparatusId);
 
-        // Calculate points on-the-fly using database function
-        var pointsField = calculatePoints(PREDICTION.PREDICTED_SCORE, COMPETITION_ENTRY.ACTUAL_SCORE);
-
-        var totalPointsField = coalesce(sum(pointsField), 0).as("total_points");
-        var totalPredictionsField = count(PREDICTION.ID).as("total_predictions");
-        var exactPredictionsField = count(when(pointsField.eq(3), 1)).as("exact_predictions");
-        var avgPointsField = coalesce(avg(pointsField), 0.0).as("avg_points");
-
-        var results = dsl.select(
-                        APP_USER.ID,
-                        APP_USER.USERNAME,
-                        APP_USER.CREATED_AT,
-                        totalPointsField,
-                        totalPredictionsField,
-                        exactPredictionsField,
-                        avgPointsField
-                )
-                .from(APP_USER)
-                .join(PREDICTION).on(APP_USER.ID.eq(PREDICTION.USER_ID))
-                .join(COMPETITION_ENTRY).on(PREDICTION.COMPETITION_ENTRY_ID.eq(COMPETITION_ENTRY.ID))
-                .join(COMPETITION).on(COMPETITION_ENTRY.COMPETITION_ID.eq(COMPETITION.ID))
-                .join(APPARATUS).on(COMPETITION_ENTRY.APPARATUS_ID.eq(APPARATUS.ID))
-                .where(APPARATUS.ID.eq(apparatusId))
-                .and(COMPETITION_ENTRY.ACTUAL_SCORE.isNotNull())
-                .groupBy(APP_USER.ID, APP_USER.USERNAME, APP_USER.CREATED_AT)
-                .fetch();
-
+        var results = leaderboardRepository.getApparatusLeaderboard(apparatusId);
         return calculateRankings(results, currentUsername);
     }
 
@@ -181,42 +101,15 @@ public class LeaderboardService {
     public List<LeaderboardEntry> getFilteredLeaderboard(LeaderboardFilter filter, String currentUsername) {
         log.debug("Fetching filtered leaderboard: {}", filter);
 
-        // Calculate points on-the-fly using database function
-        var pointsField = calculatePoints(PREDICTION.PREDICTED_SCORE, COMPETITION_ENTRY.ACTUAL_SCORE);
-
-        var totalPointsField = coalesce(sum(pointsField), 0).as("total_points");
-        var totalPredictionsField = count(PREDICTION.ID).as("total_predictions");
-        var exactPredictionsField = count(when(pointsField.eq(3), 1)).as("exact_predictions");
-        var avgPointsField = coalesce(avg(pointsField), 0.0).as("avg_points");
-
-        var queryBuilder = dsl.select(
-                        APP_USER.ID,
-                        APP_USER.USERNAME,
-                        APP_USER.CREATED_AT,
-                        totalPointsField,
-                        totalPredictionsField,
-                        exactPredictionsField,
-                        avgPointsField
-                )
-                .from(APP_USER)
-                .join(PREDICTION).on(APP_USER.ID.eq(PREDICTION.USER_ID))
-                .join(COMPETITION_ENTRY).on(PREDICTION.COMPETITION_ENTRY_ID.eq(COMPETITION_ENTRY.ID))
-                .join(COMPETITION).on(COMPETITION_ENTRY.COMPETITION_ID.eq(COMPETITION.ID))
-                .leftJoin(GYMNAST).on(COMPETITION_ENTRY.GYMNAST_ID.eq(GYMNAST.ID))
-                .leftJoin(APPARATUS).on(COMPETITION_ENTRY.APPARATUS_ID.eq(APPARATUS.ID))
-                .where(COMPETITION_ENTRY.ACTUAL_SCORE.isNotNull());
-
-        // Apply filters
-        var filteredQuery = applyFilters(queryBuilder, filter);
-
-        var results = filteredQuery.groupBy(APP_USER.ID, APP_USER.USERNAME, APP_USER.CREATED_AT)
-                .fetch();
-
+        var results = leaderboardRepository.getFilteredLeaderboard(filter);
         return calculateRankings(results, currentUsername);
     }
 
     /**
      * Get user's current rank in overall leaderboard.
+     * <p>
+     * TODO: This method is currently unused and kept for future feature implementation.
+     * Consider implementing a user statistics dashboard that displays personal rank.
      *
      * @param userId The user ID
      * @return User's rank (position), or 0 if not found
@@ -232,50 +125,23 @@ public class LeaderboardService {
 
     /**
      * Calculate rank trend by comparing with previous competition.
-     * Future enhancement - currently returns STABLE for all users.
+     * <p>
+     * TODO: Future enhancement - implement rank trend calculation.
+     * This will require:
+     * - Storing historical rank snapshots after each competition
+     * - Creating a rank_history table with (user_id, competition_id, rank, timestamp)
+     * - Comparing current rank with previous competition's rank
+     * - Returns UP if rank improved (lower number), DOWN if worsened, NEW for first-time rankers
+     * <p>
+     * Currently returns STABLE for all users as a placeholder.
      *
      * @param userId      The user ID
      * @param currentRank Current rank position
      * @return Rank trend indicator
      */
     public RankTrend calculateRankTrend(Long userId, int currentRank) {
-        // TODO: Implement rank trend calculation by comparing with previous competition
-        // For now, return STABLE as a placeholder
+        // Placeholder implementation - always returns STABLE
         return RankTrend.STABLE;
-    }
-
-    /**
-     * Apply filter conditions to the query.
-     *
-     * @param query  The base query
-     * @param filter Filter criteria
-     * @return Query with filters applied
-     */
-    private SelectConditionStep<?> applyFilters(
-            SelectConditionStep<?> query,
-            LeaderboardFilter filter) {
-
-        if (filter.competitionId() != null) {
-            query = query.and(COMPETITION.ID.eq(filter.competitionId()));
-        }
-
-        if (filter.apparatusId() != null) {
-            query = query.and(APPARATUS.ID.eq(filter.apparatusId()));
-        }
-
-        if (filter.gender() != null) {
-            query = query.and(GYMNAST.GENDER.eq(filter.gender()));
-        }
-
-        if (filter.startDate() != null) {
-            query = query.and(COMPETITION.DATE.greaterOrEqual(filter.startDate()));
-        }
-
-        if (filter.endDate() != null) {
-            query = query.and(COMPETITION.DATE.lessOrEqual(filter.endDate()));
-        }
-
-        return query;
     }
 
     /**

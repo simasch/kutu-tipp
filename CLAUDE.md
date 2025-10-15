@@ -155,8 +155,7 @@ GROUP BY user_id;
 ```
 
 **Note**: Points are never stored in the database. They are calculated fresh in every query, ensuring data consistency
-and eliminating the need for recalculation triggers when actual scores are updated. The Java `PointsCalculationService`
-is kept for reference and testing but is not used in production queries.
+and eliminating the need for recalculation triggers when actual scores are updated.
 
 ## Development Environment
 

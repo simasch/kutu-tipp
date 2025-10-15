@@ -5,6 +5,7 @@ import ch.martinelli.fun.kututipp.dto.CompetitionDto;
 import ch.martinelli.fun.kututipp.dto.CompetitionEntryDto;
 import ch.martinelli.fun.kututipp.dto.PredictionInputDto;
 import ch.martinelli.fun.kututipp.service.PredictionService;
+import ch.martinelli.fun.kututipp.service.UserService;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -27,7 +28,6 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
-import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -40,8 +40,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static ch.martinelli.fun.kututipp.db.Tables.APP_USER;
 
 /**
  * View for making predictions on gymnast performances.
@@ -81,16 +79,13 @@ public class PredictionView extends VerticalLayout implements BeforeEnterObserve
     private List<CompetitionEntryDto> entries = new ArrayList<>();
     private final Map<Long, BigDecimal> predictionInputs = new HashMap<>();
 
-    public PredictionView(PredictionService predictionService, DSLContext dsl) {
+    public PredictionView(PredictionService predictionService, UserService userService) {
         this.predictionService = predictionService;
 
         // Get current user
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         this.currentUsername = authentication.getName();
-        this.currentUserId = dsl.selectFrom(APP_USER)
-                .where(APP_USER.USERNAME.eq(currentUsername))
-                .fetchOne()
-                .getId();
+        this.currentUserId = userService.getCurrentUserId(currentUsername);
 
         setSizeFull();
         setPadding(true);

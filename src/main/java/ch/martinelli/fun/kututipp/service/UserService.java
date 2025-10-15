@@ -117,4 +117,19 @@ public class UserService {
     public AppUserRecord findByEmail(String email) {
         return userRepository.findByEmail(email).orElse(null);
     }
+
+    /**
+     * Gets the user ID for the currently authenticated user.
+     * This is a convenience method to avoid duplicating user lookup logic in views.
+     *
+     * @param username the username of the current user
+     * @return the user ID
+     * @throws IllegalArgumentException if user not found
+     */
+    @Transactional(readOnly = true)
+    public Long getCurrentUserId(String username) {
+        return userRepository.findByUsername(username)
+                .map(AppUserRecord::getId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+    }
 }

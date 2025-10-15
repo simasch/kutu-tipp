@@ -73,18 +73,6 @@ public class UserRepository {
     }
 
     /**
-     * Finds a user by ID.
-     *
-     * @param id the user ID
-     * @return an Optional containing the user record if found, empty otherwise
-     */
-    public Optional<AppUserRecord> findById(Long id) {
-        return dsl.selectFrom(APP_USER)
-                .where(APP_USER.ID.eq(id))
-                .fetchOptional();
-    }
-
-    /**
      * Creates a new user in the database.
      *
      * @param username     the username

@@ -154,20 +154,6 @@ public class PredictionRepository {
     }
 
     /**
-     * Gets a specific prediction.
-     *
-     * @param userId             The user ID
-     * @param competitionEntryId The competition entry ID
-     * @return Optional containing the prediction if found
-     */
-    public Optional<PredictionRecord> getPrediction(Long userId, Long competitionEntryId) {
-        return dsl.selectFrom(PREDICTION)
-                .where(PREDICTION.USER_ID.eq(userId))
-                .and(PREDICTION.COMPETITION_ENTRY_ID.eq(competitionEntryId))
-                .fetchOptional();
-    }
-
-    /**
      * Counts the number of predictions made by a user for a specific competition.
      *
      * @param userId        The user ID

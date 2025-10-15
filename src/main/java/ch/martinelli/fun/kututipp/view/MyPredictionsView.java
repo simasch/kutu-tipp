@@ -2,6 +2,7 @@ package ch.martinelli.fun.kututipp.view;
 
 import ch.martinelli.fun.kututipp.dto.UserCompetitionSummaryDto;
 import ch.martinelli.fun.kututipp.repository.PredictionRepository;
+import ch.martinelli.fun.kututipp.service.UserService;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -19,15 +20,12 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
-import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
-
-import static ch.martinelli.fun.kututipp.db.Tables.APP_USER;
 
 /**
  * View for displaying and managing user's existing predictions.
@@ -47,16 +45,13 @@ public class MyPredictionsView extends VerticalLayout {
 
     private final Grid<UserCompetitionSummaryDto> grid;
 
-    public MyPredictionsView(PredictionRepository predictionRepository, DSLContext dsl) {
+    public MyPredictionsView(PredictionRepository predictionRepository, UserService userService) {
         this.predictionRepository = predictionRepository;
 
         // Get current user
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         this.currentUsername = authentication.getName();
-        this.currentUserId = dsl.selectFrom(APP_USER)
-                .where(APP_USER.USERNAME.eq(currentUsername))
-                .fetchOne()
-                .getId();
+        this.currentUserId = userService.getCurrentUserId(currentUsername);
 
         setSizeFull();
         setPadding(true);
