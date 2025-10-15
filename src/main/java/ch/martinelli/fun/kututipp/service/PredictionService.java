@@ -118,16 +118,14 @@ public class PredictionService {
         }
 
         // Check deadline for first entry (assuming all entries are from same competition)
-        if (!predictions.isEmpty()) {
-            var firstEntryId = predictions.getFirst().competitionEntryId();
-            var competition = predictionRepository.getCompetitionByEntryId(firstEntryId)
-                    .orElseThrow(() -> new PredictionValidationException("Competition entry not found"));
+        var firstEntryId = predictions.getFirst().competitionEntryId();
+        var competition = predictionRepository.getCompetitionByEntryId(firstEntryId)
+                .orElseThrow(() -> new PredictionValidationException("Competition entry not found"));
 
-            if (!competition.isPredictionAllowed()) {
-                throw new PredictionDeadlinePassedException(
-                        "Prediction deadline has passed for competition: " + competition.name()
-                );
-            }
+        if (!competition.isPredictionAllowed()) {
+            throw new PredictionDeadlinePassedException(
+                    "Prediction deadline has passed for competition: " + competition.name()
+            );
         }
 
         // Save all predictions
