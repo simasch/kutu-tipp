@@ -101,7 +101,7 @@ Based on the domain concept (docs/1_Konzept.md), the system should have these ma
 - `apparatus` - Equipment (Reck, Boden, etc.) by gender
 - `competition_entry` - Links gymnasts to apparatus for specific competitions, stores actual scores
 - `app_user` - Application users (tippers) with role (USER/ADMIN) for authentication and authorization
-- `prediction` - User predictions with points earned
+- `prediction` - User predictions (predicted_score only, points are calculated on-the-fly)
 
 **ENUMs**:
 - `competition_status` - ENUM('upcoming', 'live', 'finished')
@@ -134,24 +134,29 @@ This project uses **Vaadin Flow** (Java-based views), not Hilla (React-based).
 
 ### Score Calculation Logic
 
-The prediction scoring system (docs/1_Konzept.md):
+Points are calculated on-the-fly using a PostgreSQL database function (see `V002__calculate_points_function.sql`):
 
 - **Exact match**: 3 points
 - **Within 5% deviation**: 2 points
 - **Within 10% deviation**: 1 point
 - **More than 10%**: 0 points
 
-```java
-public int calculatePoints(double predicted, double actual) {
-    double difference = Math.abs(predicted - actual);
-    double percentage = (difference / actual) * 100;
+**Database Function**:
 
-    if (difference < 0.001) return 3;  // Exact
-    if (percentage <= 5) return 2;
-    if (percentage <= 10) return 1;
-    return 0;
-}
+```sql
+-- Points are calculated on-demand using the database function calculate_points()
+-- Example usage in queries:
+SELECT user_id,
+       SUM(calculate_points(predicted_score, actual_score)) AS total_points
+FROM prediction
+JOIN competition_entry ON prediction.competition_entry_id = competition_entry.id
+WHERE actual_score IS NOT NULL
+GROUP BY user_id;
 ```
+
+**Note**: Points are never stored in the database. They are calculated fresh in every query, ensuring data consistency
+and eliminating the need for recalculation triggers when actual scores are updated. The Java `PointsCalculationService`
+is kept for reference and testing but is not used in production queries.
 
 ## Development Environment
 

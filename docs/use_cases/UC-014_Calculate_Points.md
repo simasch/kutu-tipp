@@ -3,13 +3,14 @@
 ## Brief Description
 
 This use case automatically calculates points earned by users based on the accuracy of their predictions compared to
-actual gymnast scores. Points are calculated when actual scores are entered for competition entries and are used to
-generate leaderboards and statistics.
+actual gymnast scores. Points are calculated on-the-fly using a PostgreSQL database function whenever needed for
+leaderboards and statistics. There is no stored points value - points are always calculated fresh from the predicted
+and actual scores.
 
 ## Actors
 
-- **Primary Actor**: System - automatically calculates points when actual scores are available
-- **Secondary Actor**: Administrator - indirectly triggers calculation by entering actual scores (UC-011)
+- **Primary Actor**: System - automatically calculates points on-the-fly when querying predictions
+- **Secondary Actor**: Administrator - creates the conditions for calculation by entering actual scores (UC-011)
 
 ## Preconditions
 
@@ -19,76 +20,70 @@ generate leaderboards and statistics.
 
 ## Postconditions
 
-- **Success**: Points are calculated and stored for each valid prediction
-- **Success**: Prediction record is updated with earned points
-- **Success**: User's total score is recalculated for the competition
-- **Success**: Leaderboard data is updated
-- **Failure**: Points remain at 0 or previous calculated value
+- **Success**: Points are calculated on-demand when needed for leaderboards or displays
+- **Success**: Points are always accurate and reflect current actual scores
+- **Success**: No stored points data to maintain or synchronize
+- **Failure**: Points calculation returns 0 for invalid data
 
 ## Main Success Scenario (Basic Flow)
 
 1. Administrator enters actual score for a competition entry (UC-011)
 2. System commits the actual score to the database
-3. System retrieves all predictions for this competition entry
-4. For each prediction:
-    - System retrieves the predicted score
-    - System retrieves the actual score
-    - System calculates the difference between predicted and actual
-    - System calculates the percentage deviation
-    - System determines points based on accuracy (see BR-001)
-    - System updates the prediction record with earned points
-5. System recalculates total points for each affected user in this competition
-6. System updates leaderboard data
-7. System logs the calculation completion
-8. System triggers notification for affected users (optional, future enhancement)
+3. When leaderboard or prediction results are requested:
+    - System executes query that includes `calculate_points(predicted_score, actual_score)` function
+    - Database function calculates points for each prediction on-the-fly
+    - Database function applies BR-001 logic (exact match: 3 pts, ≤5%: 2 pts, ≤10%: 1 pt, >10%: 0 pts)
+    - Query aggregates calculated points (SUM, AVG, COUNT) as needed
+    - Query filters predictions by deadline (30 minutes before competition)
+4. System returns calculated results to user
+5. Points are always current and reflect latest actual scores
 
 ## Alternative Flows
 
-### 4a. Prediction Made After Deadline
+### 3a. Prediction Made After Deadline
 
-- At step 4, if prediction timestamp is after the deadline:
-    1. System skips this prediction (remains at 0 points)
-    2. System logs the invalid prediction
-    3. System continues with next prediction
+- At step 3, query filters out predictions made after deadline:
+    1. WHERE clause excludes predictions with `created_at >= (competition.date - interval '30 minutes')`
+    2. Excluded predictions contribute 0 to totals
+    3. Query continues with valid predictions
 
-### 4b. Invalid Actual Score
+### 3b. No Actual Score
 
-- At step 4, if actual score is invalid (null, negative, or unrealistic):
-    1. System skips point calculation for this entry
-    2. System logs the error with entry details
-    3. Use case ends without updating points
+- At step 3, if actual score is NULL:
+    1. Database function returns 0 (or query filters out entries without actual scores)
+    2. Prediction not included in leaderboard calculations
+    3. Query continues with entries that have actual scores
 
-### 4c. No Predictions Found
+### 3c. No Predictions Found
 
-- At step 3, if no predictions exist for this competition entry:
-    1. System logs that no predictions need calculation
-    2. Use case ends successfully
+- At step 3, if no predictions exist for the query:
+    1. Query returns empty results or zeros for aggregations
+    2. No error occurs, it's a valid scenario
 
-### 5a. Recalculation Triggered
+### 3d. Actual Score Updated
 
-- At any time, if administrator manually triggers recalculation:
-    1. System retrieves all competition entries with actual scores
-    2. System repeats steps 3-6 for all entries
-    3. System logs the recalculation event
+- At any time, if actual score is corrected:
+    1. No recalculation needed - points are always calculated fresh
+    2. Next query automatically uses new actual score
+    3. Points immediately reflect the correction
 
 ## Exception Flows
 
-### E1: Database Error During Calculation
+### E1: Database Function Error
 
-- If database error occurs during point update:
-    1. System rolls back the transaction
-    2. System logs the error with details
-    3. System retries calculation once
-    4. If retry fails, system alerts administrator
-    5. Use case ends
+- If database function encounters invalid data:
+    1. Function returns 0 for invalid inputs (e.g., negative scores)
+    2. Query continues processing remaining rows
+    3. Error logged at DEBUG level
+    4. Use case ends normally with partial results
 
-### E2: Concurrent Calculation Conflict
+### E2: Query Timeout
 
-- If multiple calculations attempt to update the same prediction:
-    1. System uses database locking to prevent race conditions
-    2. Second calculation waits for first to complete
-    3. Second calculation verifies if recalculation is still needed
-    4. Use case continues normally
+- If leaderboard query takes too long:
+    1. Database connection timeout occurs
+    2. System returns error to user
+    3. User can retry the request
+    4. Consider query optimization or caching (future enhancement)
 
 ## Business Rules
 
@@ -103,16 +98,58 @@ Points are awarded based on the percentage deviation between predicted and actua
 | ≤ 10%                 | 1              | Within 10% deviation    |
 | > 10%                 | 0              | More than 10% deviation |
 
-**Calculation Logic**:
+**Database Function** (`calculate_points`):
 
-```java
-double difference = Math.abs(predicted - actual);
-double percentage = (difference / actual) * 100;
+```sql
+CREATE OR REPLACE FUNCTION calculate_points(
+    predicted NUMERIC(5, 3),
+    actual NUMERIC(5, 3)
+) RETURNS INTEGER AS
+$$
+DECLARE
+    difference    NUMERIC;
+    percentage    NUMERIC;
+    exact_threshold CONSTANT NUMERIC := 0.001;
+BEGIN
+    -- Validate scores
+    IF actual IS NULL OR predicted IS NULL THEN
+        RETURN 0;
+    END IF;
 
-if(difference< 0.001)return 3;  // Exact (accounting for floating-point precision)
-        if(percentage <=5)return 2;      // Within 5%
-        if(percentage <=10)return 1;     // Within 10%
-        return 0;                           // More than 10%
+    IF actual < 0 OR actual > 20 OR predicted < 0 OR predicted > 20 THEN
+        RETURN 0;
+    END IF;
+
+    -- Handle zero actual score
+    IF actual < exact_threshold THEN
+        IF ABS(predicted - actual) < exact_threshold THEN
+            RETURN 3;  -- Exact match
+        ELSE
+            RETURN 0;
+        END IF;
+    END IF;
+
+    -- Calculate deviation
+    difference := ABS(predicted - actual);
+
+    -- Check exact match
+    IF difference < exact_threshold THEN
+        RETURN 3;
+    END IF;
+
+    -- Calculate percentage
+    percentage := (difference / actual) * 100.0;
+
+    -- Award points
+    IF percentage <= 5.0 THEN
+        RETURN 2;
+    ELSIF percentage <= 10.0 THEN
+        RETURN 1;
+    ELSE
+        RETURN 0;
+    END IF;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
 ```
 
 **Examples**:
@@ -138,12 +175,12 @@ if(difference< 0.001)return 3;  // Exact (accounting for floating-point precisio
 - Scores are stored with 2 decimal places precision
 - Exact match threshold is 0.001 to account for floating-point precision
 
-### BR-004: Recalculation Rules
+### BR-004: On-the-Fly Calculation
 
-- Points are recalculated if actual score is corrected/updated
-- Previous points are overwritten, not accumulated
-- Leaderboard is automatically updated after recalculation
-- Calculation history is logged for audit purposes
+- Points are never stored, always calculated fresh
+- No recalculation needed when actual scores are updated
+- Points automatically reflect latest actual scores in every query
+- No synchronization issues between stored and calculated values
 
 ### BR-005: Competition Scoring
 
@@ -193,83 +230,117 @@ if(difference< 0.001)return 3;  // Exact (accounting for floating-point precisio
 
 ### Tables Affected
 
-- `prediction` (UPDATE) - Store calculated points
-- `competition_entry` (READ) - Read actual scores
-- `competition` (READ) - Verify competition status and timing
+- `prediction` (READ) - Read predicted scores for calculation
+- `competition_entry` (READ) - Read actual scores for calculation
+- `competition` (READ) - Verify competition status and deadline filtering
 
-### Fields Updated
+### Database Function
 
-```sql
-UPDATE prediction
-SET points     = ?, -- calculated points (0-3)
-    updated_at = ?  -- calculation timestamp
-WHERE id = ?
-  AND entry_id = ?
-  AND user_id = ?;
-```
+- `calculate_points(predicted NUMERIC, actual NUMERIC) RETURNS INTEGER`
+- Immutable function (same inputs always produce same output)
+- Can be used in SELECT queries, WHERE clauses, and aggregations
 
-### Fields Read
+### Example Queries
 
 ```sql
--- Get predictions to calculate
+-- Calculate points for a single prediction
 SELECT p.id,
-       p.entry_id,
        p.user_id,
        p.predicted_score,
-       p.created_at,
        e.actual_score,
-       e.competition_id,
-       c.start_time,
-       c.status
+       calculate_points(p.predicted_score, e.actual_score) AS points
 FROM prediction p
-         JOIN competition_entry e ON p.entry_id = e.id
+         JOIN competition_entry e ON p.competition_entry_id = e.id
+WHERE p.id = ?;
+
+-- Leaderboard query with aggregated points
+SELECT u.id,
+       u.username,
+       SUM(calculate_points(p.predicted_score, e.actual_score))     AS total_points,
+       COUNT(p.id)                                                   AS total_predictions,
+       COUNT(CASE WHEN calculate_points(p.predicted_score, e.actual_score) = 3 THEN 1 END) AS exact_predictions
+FROM app_user u
+         JOIN prediction p ON u.id = p.user_id
+         JOIN competition_entry e ON p.competition_entry_id = e.id
          JOIN competition c ON e.competition_id = c.id
 WHERE e.actual_score IS NOT NULL
-    AND p.points IS NULL
-   OR p.points != ?; -- recalculation needed
+  AND p.created_at < (c.date - INTERVAL '30 minutes')
+GROUP BY u.id, u.username
+ORDER BY total_points DESC;
 ```
 
 ## Service Layer Design
 
 ### PointsCalculationService
 
+**NOTE**: As of refactoring, points calculation has moved to the database. This Java service is kept for reference and
+testing purposes only.
+
 **Responsibilities**:
 
-- Calculate points for individual predictions
-- Batch calculate points for competition entries
-- Recalculate points for entire competitions
-- Update leaderboard data
+- Provide reference implementation for testing database function
+- Document calculation logic for developers
 
-**Key Methods**:
+**Key Method**:
 
 ```java
 /**
  * Calculate points for a single prediction.
+ * NOTE: This is a reference implementation. Production code uses the database function calculate_points().
  * @param predicted The predicted score
  * @param actual The actual score
  * @return Points earned (0-3)
  */
 public int calculatePoints(double predicted, double actual);
+```
+
+### LeaderboardService
+
+**Responsibilities**:
+
+- Query and aggregate prediction points using database function
+- Apply business rules (deadlines, filters)
+- Calculate rankings and statistics
+
+**Key Methods**:
+
+```java
+/**
+ * Get overall leaderboard using calculated points.
+ */
+public List<LeaderboardEntry> getOverallLeaderboard(String currentUsername);
 
 /**
- * Calculate and store points for all predictions of a competition entry.
- * @param entryId The competition entry ID
- * @return Number of predictions updated
+ * Get leaderboard for specific competition.
  */
-public int calculatePointsForEntry(Long entryId);
+public List<LeaderboardEntry> getCompetitionLeaderboard(Long competitionId, String currentUsername);
 
 /**
- * Recalculate points for all entries in a competition.
- * @param competitionId The competition ID
- * @return Number of predictions recalculated
+ * Get leaderboard for specific apparatus.
  */
-public int recalculatePointsForCompetition(Long competitionId);
+public List<LeaderboardEntry> getApparatusLeaderboard(Long apparatusId, String currentUsername);
+```
 
-/**
- * Update leaderboard after point calculations.
- * @param competitionId The competition ID
- */
-public void updateLeaderboard(Long competitionId);
+**Example Implementation**:
+
+```java
+public List<LeaderboardEntry> getOverallLeaderboard(String currentUsername) {
+    var pointsField = calculatePoints(PREDICTION.PREDICTED_SCORE, COMPETITION_ENTRY.ACTUAL_SCORE);
+
+    return dsl.select(
+                    APP_USER.ID,
+                    APP_USER.USERNAME,
+                    sum(pointsField).as("total_points"),
+                    count(PREDICTION.ID).as("total_predictions"),
+                    count(when(pointsField.eq(3), 1)).as("exact_predictions")
+            )
+            .from(APP_USER)
+            .join(PREDICTION).on(APP_USER.ID.eq(PREDICTION.USER_ID))
+            .join(COMPETITION_ENTRY).on(PREDICTION.COMPETITION_ENTRY_ID.eq(COMPETITION_ENTRY.ID))
+            .where(COMPETITION_ENTRY.ACTUAL_SCORE.isNotNull())
+            .groupBy(APP_USER.ID, APP_USER.USERNAME)
+            .fetch();
+}
 ```
 
 ## Integration Points
@@ -277,26 +348,26 @@ public void updateLeaderboard(Long competitionId);
 ### UC-011: Enter Actual Scores
 
 - **Trigger**: When administrator saves actual score
-- **Action**: System automatically calls calculatePointsForEntry()
-- **Result**: Points calculated for all predictions of that entry
+- **Action**: No special action required - actual score is stored in database
+- **Result**: Next leaderboard query automatically includes new points
 
 ### UC-012: Import Results (CSV/Excel)
 
 - **Trigger**: After bulk import completes
-- **Action**: System calls recalculatePointsForCompetition()
-- **Result**: All predictions recalculated in batch
+- **Action**: Actual scores are written to database
+- **Result**: Next leaderboard query automatically reflects all imported scores
 
 ### UC-015: View Leaderboard
 
-- **Dependency**: Requires up-to-date calculated points
-- **Action**: Leaderboard queries aggregated points from predictions
-- **Note**: Points must be calculated before leaderboard display
+- **Dependency**: Requires actual scores to be entered
+- **Action**: Leaderboard queries use calculate_points() function to compute points on-the-fly
+- **Note**: Points are always current, never stale
 
 ### UC-016: View Competition Details
 
 - **Dependency**: Shows individual prediction results with points
-- **Action**: Displays earned points per prediction
-- **Note**: Points are pre-calculated, not calculated on-demand
+- **Action**: Query uses calculate_points() to display earned points per prediction
+- **Note**: Points are calculated on-demand when viewing details
 
 ## Test Scenarios
 

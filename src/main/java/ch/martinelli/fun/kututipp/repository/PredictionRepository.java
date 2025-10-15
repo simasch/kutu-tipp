@@ -114,7 +114,6 @@ public class PredictionRepository {
             prediction.setUserId(userId);
             prediction.setCompetitionEntryId(competitionEntryId);
             prediction.setPredictedScore(predictedScore);
-            prediction.setPointsEarned(null); // Will be calculated later
             prediction.setCreatedAt(now);
             prediction.setUpdatedAt(now);
             prediction.store();
